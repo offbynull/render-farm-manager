@@ -2,9 +2,7 @@ import { Component } from '@angular/core';
 
 @Component({
   selector: 'rfm-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  template: '<rfm-actor-test></rfm-actor-test>'
 })
 export class AppComponent {
-  title = 'rfm';
 }
