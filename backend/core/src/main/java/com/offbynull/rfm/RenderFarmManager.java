@@ -20,6 +20,8 @@ import com.offbynull.actors.ActorSystem;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.EnumSet;
+import javax.servlet.DispatcherType;
 import javax.servlet.http.HttpServlet;
 import org.apache.commons.lang3.Validate;
 import org.eclipse.jetty.server.Connector;
@@ -28,8 +30,10 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
-import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.servlet.FilterHolder;
+import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +68,7 @@ public final class RenderFarmManager implements Closeable {
         HttpServlet servlet = actorSystem.getServletGateway().getServlet();
         Server jettyServer = null;
         try {
-            QueuedThreadPool threadPool = new QueuedThreadPool(100, 10, 30000); // max:100threads, min:10threads, kill thread after 30s
+            QueuedThreadPool threadPool = new QueuedThreadPool(100, 10, 30000); // max:100threads, min:10threads, kill threads after 30s
             jettyServer = new Server(threadPool);
             
             ServerConnector connector = new ServerConnector(jettyServer);
@@ -72,21 +76,24 @@ public final class RenderFarmManager implements Closeable {
             connector.setHost(listenAddr.getHostString());
             jettyServer.setConnectors(new Connector[] {connector});
   
-            
-            ServletHandler servletHandler = new ServletHandler();
-            
+
+            // https://stackoverflow.com/a/28192729/1196226
+            ServletContextHandler context = new ServletContextHandler();
+            context.setContextPath("/");
+
             ServletHolder servletHolder = new ServletHolder(servlet);
-            servletHolder.setAsyncSupported(true);
-            servletHandler.addServletWithMapping(servletHolder, "/rfm");
-            
-//            DoSFilter dosFilter = new DoSFilter();
-//            FilterHolder filterHolder = new FilterHolder(dosFilter);
-//            servletHandler.addFilterWithMapping(filterHolder, "/*", EnumSet.of(DispatcherType.REQUEST, DispatcherType.ASYNC));
+            context.addServlet(servletHolder, "/rfm/*");
+
+            FilterHolder cors = context.addFilter(CrossOriginFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
+            cors.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
+            cors.setInitParameter(CrossOriginFilter.ACCESS_CONTROL_ALLOW_ORIGIN_HEADER, "*");
+            cors.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, "GET,POST,HEAD");
+            cors.setInitParameter(CrossOriginFilter.ALLOWED_HEADERS_PARAM, "X-Requested-With,Content-Type,Accept,Origin");
 
             HandlerList handlers = new HandlerList();
-            handlers.setHandlers(new Handler[] {servletHandler, new DefaultHandler()});
-            
-            
+            handlers.setHandlers(new Handler[] {context, new DefaultHandler() });
+
+
             jettyServer.setHandler(handlers);
             jettyServer.setStopAtShutdown(true);
             jettyServer.start();
