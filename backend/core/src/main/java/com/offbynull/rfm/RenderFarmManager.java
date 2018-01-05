@@ -56,6 +56,10 @@ public final class RenderFarmManager implements Closeable {
         Validate.notNull(listenAddr);
 
         ActorSystem actorSystem = ActorSystem.defaultBuilder().build();
+        actorSystem.getActorGateway().addActor(
+                "echoer",
+                new EchoActor(),
+                new Object());
         
         HttpServlet servlet = actorSystem.getServletGateway().getServlet();
         Server jettyServer = null;
