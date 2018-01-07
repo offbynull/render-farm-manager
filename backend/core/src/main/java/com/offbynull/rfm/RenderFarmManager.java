@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Kasra Faghihi, All rights reserved.
+ * Copyright (c) 2018, Kasra Faghihi, All rights reserved.
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -65,7 +65,8 @@ public final class RenderFarmManager implements Closeable {
                 new EchoActor(),
                 new Object());
         
-        HttpServlet servlet = actorSystem.getServletGateway().getServlet();
+        HttpServlet messageServlet = actorSystem.getServletGateway().getMessageServlet();
+        HttpServlet addressServlet = actorSystem.getServletGateway().getAddressServlet();
         Server jettyServer = null;
         try {
             QueuedThreadPool threadPool = new QueuedThreadPool(100, 10, 30000); // max:100threads, min:10threads, kill threads after 30s
@@ -81,8 +82,11 @@ public final class RenderFarmManager implements Closeable {
             ServletContextHandler context = new ServletContextHandler();
             context.setContextPath("/");
 
-            ServletHolder servletHolder = new ServletHolder(servlet);
-            context.addServlet(servletHolder, "/rfm/*");
+            ServletHolder messageServletHolder = new ServletHolder(messageServlet);
+            context.addServlet(messageServletHolder, "/rfm/*");
+            
+            ServletHolder addressServletHolder = new ServletHolder(addressServlet);
+            context.addServlet(addressServletHolder, "/address/*");
 
             FilterHolder cors = context.addFilter(CrossOriginFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
             cors.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
