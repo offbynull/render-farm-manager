@@ -1,0 +1,6 @@
+gpu{
+  s_gpu_id:pci_0000_0001
+  s_vendor:nvidia
+  s_model:1080
+  b_available:true
+}

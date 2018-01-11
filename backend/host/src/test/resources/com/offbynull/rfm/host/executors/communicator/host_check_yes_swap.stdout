@@ -1,0 +1,186 @@
+!UNAME
+1
+Linux user-VirtualBox 4.8.0-53-generic #56~16.04.1-Ubuntu SMP Tue May 16 01:18:56 UTC 2017 x86_64 x86_64 x86_64 GNU/Linux
+!DF
+8
+        Used         Avail Type            Mounted on
+           0             0 sysfs           /sys
+           0             0 proc            /proc
+    11628544     198066176 tmpfs           /run
+  6237376512    1636257792 ext4            /
+        4096       5238784 tmpfs           /run/lock
+           -             - -               /proc/sys/fs/binfmt_misc
+128311619584 1872085123072 vboxsf          /media/sf_Downloads
+!CGROUP_CPUSET
+1
+0-1
+!CPUINFO
+51
+processor	: 0
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 158
+model name	: Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz1
+stepping	: 9
+cpu MHz		: 4199.992
+cache size	: 8192 KB
+physical id	: 0
+siblings	: 2
+core id		: 0
+cpu cores	: 2
+apicid		: 0
+initial apicid	: 0
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 22
+wp		: yes
+flags		: fpu vme de
+bugs		:
+bogomips	: 8399.98
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 39 bits physical, 48 bits virtual
+power management:
+
+processor	: 1
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 158
+model name	: Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz2
+stepping	: 9
+cpu MHz		: 4199.992
+cache size	: 8192 KB
+physical id	: 0
+siblings	: 2
+core id		: 1
+cpu cores	: 2
+apicid		: 1
+initial apicid	: 1
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 22
+wp		: yes
+flags		: a b c
+bugs		:
+bogomips	: 8399.98
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 39 bits physical, 48 bits virtual
+power management:
+!PROCSTAT1
+10
+cpu  4590 0 3952 15916364 470 0 157 0 0 0
+cpu0 1228 0 1530 7970355 288 0 102 0 0 0
+cpu1 3362 0 2422 7946008 182 0 55 0 0 0
+intr 10743091 32 21 0 0 0 0 0 0 0 0 0 0 185 0 0 79362 46079 0 0 75391 407961 24665 29 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ctxt 48912654
+btime 1524152466
+processes 46685
+procs_running 1
+procs_blocked 0
+softirq 4956089 2 1801504 14996 121814 62602 0 109 1800641 0 1154421
+!PROCSTAT2
+10
+cpu  4590 0 3952 15916563 470 0 157 0 0 0
+cpu0 1228 0 1530 7970455 288 0 102 0 0 0
+cpu1 3362 0 2422 7946108 182 0 55 0 0 0
+intr 10743281 32 21 0 0 0 0 0 0 0 0 0 0 185 0 0 79364 46085 0 0 75392 407961 24665 29 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ctxt 48913253
+btime 1524152466
+processes 46689
+procs_running 1
+procs_blocked 0
+softirq 4956195 2 1801542 14996 121821 62603 0 109 1800678 0 1154444
+!KERNEL_CONFIGS
+1
+CONFIG_MEMCG_SWAP_ENABLED=y
+!CGROUP_MEM_USAGE
+1
+867074048
+!CGROUP_MEM_STAT
+31
+cache 448589824
+rss 414126080
+rss_huge 153092096
+mapped_file 146714624
+dirty 36864
+writeback 0
+pgpgin 1768012
+pgpgout 1594691
+pgfault 3784044
+pgmajfault 2059
+inactive_anon 20967424
+active_anon 414986240
+inactive_file 207572992
+active_file 219156480
+unevictable 32768
+hierarchical_memory_limit 9223372036854771712
+total_cache 448983040
+total_rss 418115584
+total_rss_huge 153092096
+total_mapped_file 146714624
+total_dirty 53248
+total_writeback 0
+total_pgpgin 1878694
+total_pgpgout 1704303
+total_pgfault 4086323
+total_pgmajfault 2061
+total_inactive_anon 20967424
+total_active_anon 418951168
+total_inactive_file 207892480
+total_active_file 219201536
+total_unevictable 32768
+!MEMINFO
+47
+MemTotal:        2047768 kB
+MemFree:         1060624 kB
+MemAvailable:    1377220 kB
+Buffers:           80316 kB
+Cached:           358148 kB
+SwapCached:            0 kB
+Active:           623136 kB
+Inactive:         223468 kB
+Active(anon):     409072 kB
+Inactive(anon):    20476 kB
+Active(file):     214064 kB
+Inactive(file):   202992 kB
+Unevictable:          32 kB
+Mlocked:              32 kB
+SwapTotal:             2 kB
+SwapFree:              1 kB
+Dirty:                52 kB
+Writeback:             0 kB
+AnonPages:        390024 kB
+Mapped:           143344 kB
+Shmem:             21376 kB
+Slab:              87064 kB
+SReclaimable:      62368 kB
+SUnreclaim:        24696 kB
+KernelStack:        6816 kB
+PageTables:        24364 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:     3118984 kB
+Committed_AS:    2304292 kB
+VmallocTotal:   34359738367 kB
+VmallocUsed:           0 kB
+VmallocChunk:          0 kB
+HardwareCorrupted:     0 kB
+AnonHugePages:    131072 kB
+ShmemHugePages:        0 kB
+ShmemPmdMapped:        0 kB
+CmaTotal:              0 kB
+CmaFree:               0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+DirectMap4k:       85952 kB
+DirectMap2M:     2011136 kB
+!TASKS
+3
+task1 123 /tmp/task 1
+task2 123 /tmp/task 2
+task3 123 /tmp/task 3

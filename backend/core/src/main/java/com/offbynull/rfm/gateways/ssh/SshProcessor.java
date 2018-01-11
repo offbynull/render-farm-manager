@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Kasra Faghihi, All rights reserved.
+ * Copyright (c) 2018, Kasra Faghihi, All rights reserved.
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,6 +17,7 @@
 package com.offbynull.rfm.gateways.ssh;
 
 import com.offbynull.actors.address.Address;
+import com.offbynull.actors.gateways.threadpool.ThreadPoolProcessor;
 import com.offbynull.actors.shuttle.Message;
 import com.offbynull.actors.shuttle.Shuttle;
 import java.io.ByteArrayInputStream;
@@ -28,7 +29,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Random;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import net.schmizz.sshj.SSHClient;
@@ -41,9 +41,9 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-final class SshCallable implements Callable<Void> {
+final class SshProcessor implements ThreadPoolProcessor {
     
-    private static final Logger LOG = LoggerFactory.getLogger(SshCallable.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SshProcessor.class);
     
     private static final String HOSTNAME;
     private static final Random RANDOM;
@@ -67,19 +67,11 @@ final class SshCallable implements Callable<Void> {
         RANDOM = random;
     }
     
-    private final Message request;
-    private final ConcurrentHashMap<String, Shuttle> outShuttles;
-
-    SshCallable(Message message, ConcurrentHashMap<String, Shuttle> outShuttles) {
-        Validate.notNull(message);
-        Validate.notNull(outShuttles); // outShuttles is concurrent map -- entries added/removed on the fly, don't nullcheck keys or values
-        this.request = message;
-        this.outShuttles = outShuttles;
-    }
-    
-
     @Override
-    public Void call() {
+    public void process(Message request, ConcurrentHashMap<String, Shuttle> outShuttles) throws Exception {
+        Validate.notNull(request);
+        Validate.notNull(outShuttles);
+
         SshRequestMessage payload = (SshRequestMessage) request.getMessage();
         Address srcAddr = request.getSourceAddress();
         Address dstAddr = request.getDestinationAddress();
@@ -136,8 +128,6 @@ final class SshCallable implements Callable<Void> {
         if (outShuttle != null) {
             outShuttle.send(response);
         }
-        
-        return null;
     }
     
     private static final class ScriptInMemorySourceFile extends InMemorySourceFile {

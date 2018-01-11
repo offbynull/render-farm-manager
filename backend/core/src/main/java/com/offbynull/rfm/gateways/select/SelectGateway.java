@@ -14,8 +14,9 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.gateways.ssh;
+package com.offbynull.rfm.gateways.select;
 
+import com.offbynull.rfm.gateways.ssh.*;
 import com.offbynull.actors.gateway.Gateway;
 import com.offbynull.actors.gateways.threadpool.ThreadPoolGateway;
 import com.offbynull.actors.shuttle.Shuttle;
@@ -25,24 +26,23 @@ import java.util.HashMap;
 import org.apache.commons.lang3.Validate;
 
 /**
- * {@link Gateway} that runs commands on Linux hosts using bash via SSH.
+ * {@link Gateway} that selects/updates/deletes hosts and jobs.
  * <p>
- * To run a command on a host, send a {@link SshRequestMessage} to this gateway. This gateway will eventually respond with a
- * {@link SshResponseMessage} on successful execution or a {@link SshErrorMessage} on failed execution.
+ * FILL THIS IN {@code 
  * @author Kasra Faghihi
  */
-public final class SshGateway implements Gateway {
+public final class SelectGateway implements Gateway {
     private final ThreadPoolGateway backingGateway;
 
-    public static SshGateway create(String prefix, int threads) {
-        return SshGateway.create(prefix, threads, threads);
+    public static ThreadPoolGateway create(String prefix, Map<Class<?>, ThreadPoolProcessor> payloadTypes, int threads) {
+        return ThreadPoolGateway.create(prefix, payloadTypes, threads);
     }
 
-    public static SshGateway create(String prefix, int minThreads, int maxThreads) {
-        return new SshGateway(prefix, minThreads, maxThreads);
+    public static ThreadPoolGateway create(String prefix, Map<Class<?>, ThreadPoolProcessor> payloadTypes, int minThreads, int maxThreads) {
+        return ThreadPoolGateway.create(prefix, payloadTypes, minThreads, maxThreads);
     }
 
-    public SshGateway(String prefix, int minThreads, int maxThreads) {
+    public SelectGateway(String prefix, int minThreads, int maxThreads) {
         Validate.notNull(prefix);
         Validate.isTrue(minThreads >= 0);
         Validate.isTrue(maxThreads >= 0);

@@ -1,0 +1,27 @@
+socket{
+  core{
+     cpu{
+       n_cpu_id:0
+       s_vendor:intel
+       n_speed:4200
+       n_capacity:100000
+     }
+     n_core_id:0
+     s_vendor:intel
+     n_speed:4200
+  }
+  core{
+    cpu{
+      n_cpu_id:1
+      s_vendor:intel
+      n_speed:4200
+      n_capacity:100000
+    }
+    n_core_id:0
+    s_vendor:intel
+    n_speed:4200
+  }
+  n_socket_id:2
+  s_vendor:intel
+  n_speed:4200
+}

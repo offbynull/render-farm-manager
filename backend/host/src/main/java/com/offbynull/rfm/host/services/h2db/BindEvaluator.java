@@ -1,0 +1,206 @@
+package com.offbynull.rfm.host.services.h2db;
+
+import com.offbynull.rfm.host.model.parser.Parser;
+import com.offbynull.rfm.host.model.selection.CapacityEnabledSelection;
+import com.offbynull.rfm.host.model.selection.Expression;
+import com.offbynull.rfm.host.model.selection.HostSelection;
+import com.offbynull.rfm.host.model.selection.NumberRange;
+import com.offbynull.rfm.host.model.selection.Selection;
+import com.offbynull.rfm.host.model.selection.SelectionType;
+import com.offbynull.rfm.host.model.specification.CapacityEnabledSpecification;
+import com.offbynull.rfm.host.model.specification.HostSpecification;
+import com.offbynull.rfm.host.model.specification.Specification;
+import com.offbynull.rfm.host.model.work.Work;
+import com.offbynull.rfm.host.model.worker.Worker;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
+import static java.math.BigDecimal.ONE;
+import static java.math.BigDecimal.ZERO;
+import static java.util.Arrays.stream;
+import static java.util.Collections.EMPTY_LIST;
+import static java.util.Collections.EMPTY_MAP;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import static java.util.stream.Collectors.toMap;
+import org.apache.commons.collections4.list.UnmodifiableList;
+import org.apache.commons.collections4.map.UnmodifiableMap;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+final class BindEvaluator {
+    public static boolean evaluate(Worker worker, Work work) {
+        Validate.notNull(worker);
+        Validate.notNull(work);
+        
+        ExpressionEvaluator expressionEvaluator = new ExpressionEvaluator(EMPTY_MAP);
+        Parser parser = new Parser(EMPTY_LIST, EMPTY_LIST);
+        
+        String script = work.getRequirementsScript();
+        UnmodifiableMap<String, Object> tags = work.getTags();
+        
+        HostSelection hostSelection = parser.parseScriptReqs(tags, script);
+        HostSpecification hostSpecification = worker.getHostSpecification();
+        
+        Expression whereExpr = hostSelection.getWhereCondition();
+        boolean hostMatches = (Boolean) expressionEvaluator.evaluate(whereExpr, tags);
+        if (!hostMatches) {
+            return false;
+        }
+        
+        return evaluate(expressionEvaluator, tags,
+                List.of(hostSelection),
+                List.of(hostSpecification));
+        
+    }
+    
+    private static <T extends Selection, U extends Specification> boolean drill(
+            ExpressionEvaluator expressionEvaluator,
+            Map<String, Object> scriptTags,
+            T selection,
+            U specification) {
+        Map<String, Method> selectionMethods = stream(selection.getClass().getDeclaredMethods())
+                .filter(m -> m.getName().startsWith("get") && m.getName().endsWith("Selections"))
+                .filter(m -> (m.getModifiers() & Modifier.PUBLIC) != 0)
+                .filter(m -> (m.getModifiers() & Modifier.STATIC) == 0)
+                .filter(m -> m.getParameterCount() == 0)
+                .collect(toMap(m -> {
+                    String ret = m.getName();
+                    ret = StringUtils.removeStart(ret, "get");
+                    ret = StringUtils.removeEnd(ret, "Selections");
+                    ret = StringUtils.uncapitalize(ret);
+                    return ret;
+                }, m -> m));
+        Map<String, Method> specificationMethods = stream(specification.getClass().getDeclaredMethods())
+                .filter(m -> m.getName().startsWith("get") && m.getName().endsWith("Specification"))
+                .filter(m -> (m.getModifiers() & Modifier.PUBLIC) != 0)
+                .filter(m -> (m.getModifiers() & Modifier.STATIC) == 0)
+                .filter(m -> m.getParameterCount() == 0)
+                .collect(toMap(m -> {
+                    String ret = m.getName();
+                    ret = StringUtils.removeStart(ret, "get");
+                    ret = StringUtils.removeEnd(ret, "Selections");
+                    ret = StringUtils.uncapitalize(ret);
+                    return ret;
+                }, m -> m));
+        
+        selectionMethods.remove("capacity");
+        specificationMethods.remove("capacity");
+        
+        for (String name : selectionMethods.keySet()) {
+            Method selectionMethod = selectionMethods.get(name);
+            Method specificationMethod = specificationMethods.get(name);
+            
+            UnmodifiableList<Selection> childSelects;
+            UnmodifiableList<Specification> childSpecs;
+            
+            try {
+                childSelects = (UnmodifiableList<Selection>) selectionMethod.invoke(selection);
+                childSpecs = (UnmodifiableList<Specification>) specificationMethod.invoke(specification);
+            } catch (ReflectiveOperationException roe) {
+                throw new IllegalStateException(roe); // should never happen
+            }
+            
+            for (Selection childSelect : childSelects) {
+                SelectionType selectionType = childSelect.getSelectionType();
+                NumberRange numberRange = childSelect.getNumberRange();
+                while (!childSpecs.isEmpty()) {
+                    Set<Specification> foundSpecs = evaluateSelection(expressionEvaluator, scriptTags, numberRange, childSelect, childSpecs);
+                    switch (selectionType) {
+                        case EACH:
+                            // Each child needs to be within the number range specified
+                            numberRange = childSelect.getNumberRange();
+                            break;
+                        case TOTAL:
+                            // All children combined need to be within the number range
+                            numberRange = subtract(numberRange, foundSpecs.size());
+                            break;
+                        default:
+                            throw new IllegalStateException();
+                    }
+                }
+            }
+        }
+        
+        return true;
+    }
+    
+    private static NumberRange subtract(NumberRange numberRange, int size) {
+        BigDecimal sizeBd = BigDecimal.valueOf(size);
+        BigDecimal newStart = numberRange.getStart().subtract(sizeBd);
+        BigDecimal newEnd = numberRange.getEnd().subtract(sizeBd);
+        
+        if (newEnd.compareTo(ZERO) <= 0) {
+            return null; // we got it all, null means stop
+        }
+        
+        if (newStart.compareTo(ZERO) <= 0) {
+            newStart = ONE;
+        }
+        
+        return new NumberRange(newStart, newEnd);
+    }
+    
+    private static <T extends Selection, U extends Specification> Set<U> evaluateSelection(
+            ExpressionEvaluator expressionEvaluator,
+            Map<String, Object> scriptTags,
+            NumberRange selectionRange,
+            T selection,
+            Set<U> remainingSpecifications) {
+        Set<U> foundSpecifications = new HashSet<>();
+
+        // DO NOT USE selection.getNumberRange() -- use selectionRange instead because we want to support TOTAL and EACH.
+        int min = selectionRange.getStart().intValueExact();
+        int max = selectionRange.getEnd().intValueExact();
+
+        for (U remainingSpecification : remainingSpecifications) {
+            Expression whereExpr = selection.getWhereCondition();
+            Map<String, Object> whereVars = new HashMap<>();
+            whereVars.putAll(scriptTags);
+            whereVars.putAll(remainingSpecification.getProperties());
+
+            // Does the where expression evaluate to true?
+            boolean matches = (Boolean) expressionEvaluator.evaluate(whereExpr, whereVars);
+            if (!matches) {
+                continue;
+            }
+
+            // Does the spec have enough capacity?
+            boolean selectCapEnabled = selection instanceof CapacityEnabledSelection;
+            boolean specCapEnabled = remainingSpecification instanceof CapacityEnabledSpecification;
+              // sanity check -- selection and spec must both have capacity OR both not have capacity
+            Validate.isTrue(!(selectCapEnabled ^ specCapEnabled));
+              // if cap enabled, skip if not enough available
+            if (selectCapEnabled && specCapEnabled) {
+                NumberRange capacitySelectionRange = ((CapacityEnabledSelection) selection).getCapacitySelection().getNumberRange();
+                BigDecimal capacity = ((CapacityEnabledSpecification) remainingSpecification).getCapacity();
+                if (capacitySelectionRange.getStart().compareTo(capacity) < 0) {
+                    continue;
+                }
+            }
+
+            // Do all the children match?
+            boolean childrenMatch = drill(expressionEvaluator, scriptTags, selection, remainingSpecification);
+            if (!childrenMatch) {
+                continue;
+            }
+
+            // Add the spec. If reached selection max, don't continue grabbing anymore
+            foundSpecifications.add(remainingSpecification);
+            if (foundSpecifications.size() >= max) {
+                break;
+            }
+        }
+
+        // Ensure we reached min
+        if (foundSpecifications.size() < min) {
+            return null;
+        }
+
+        remainingSpecifications.removeAll(foundSpecifications);
+        return foundSpecifications;
+    }
+}

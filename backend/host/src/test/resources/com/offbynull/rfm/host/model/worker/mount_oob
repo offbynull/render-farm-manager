@@ -1,0 +1,6 @@
+mount{
+  s_target:/mnt1
+  b_rotational:false
+  s_type:ext4
+  n_capacity:-1
+}

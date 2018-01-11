@@ -1,0 +1,87 @@
+!WORKDIR
+1
+/opt/rfm/testTask
+!WORKUSER
+1
+user
+!WORKCMD0
+1
+stress
+!WORKCMD1
+1
+-c
+!WORKCMD2
+1
+1
+!WORKCMD3
+1
+-t
+!WORKCMD4
+1
+60s
+!STATE
+1
+STARTED
+!CPUS
+1
+1
+!CPU_QUOTA
+1
+20000
+!CPU_PERIOD
+1
+100000
+!MEMORY_SIZE
+1
+268435456
+!DISK_SIZE
+1
+33554432
+!RUN_SID
+1
+17002
+!RUN_PIDS
+3
+17002
+17021
+17022
+!DF
+2
+  Used    Avail Type Mounted on
+211968 30601216 ext2 /opt/rfm/testTask/work_mnt
+!CGROUP_MEM_USAGE
+1
+1888256
+!CGROUP_MEM_STAT
+31
+cache 12288
+rss 1056768
+rss_huge 0
+mapped_file 0
+dirty 0
+writeback 0
+pgpgin 641
+pgpgout 380
+pgfault 1503
+pgmajfault 0
+inactive_anon 0
+active_anon 1056768
+inactive_file 12288
+active_file 0
+unevictable 0
+hierarchical_memory_limit 268435456
+total_cache 12288
+total_rss 1056768
+total_rss_huge 0
+total_mapped_file 0
+total_dirty 0
+total_writeback 0
+total_pgpgin 641
+total_pgpgout 380
+total_pgfault 1503
+total_pgmajfault 0
+total_inactive_anon 0
+total_active_anon 1056768
+total_inactive_file 12288
+total_active_file 0
+total_unevictable 0
