@@ -1,14 +1,14 @@
-package com.offbynull.rfm.host.model.selected;
+package com.offbynull.rfm.host.model.selection;
 
 import com.offbynull.rfm.host.model.requirement.NumberRange;
-import com.offbynull.rfm.host.model.requirement.GpuRequirement;
-import com.offbynull.rfm.host.model.specification.GpuSpecification;
+import com.offbynull.rfm.host.model.requirement.RamRequirement;
+import com.offbynull.rfm.host.model.specification.RamSpecification;
 import java.util.Set;
 import org.apache.commons.lang3.Validate;
 
-public final class GpuSelected extends Selected<GpuRequirement, GpuSpecification> {
+public final class RamSelection extends Selection<RamRequirement, RamSpecification> {
     
-    public GpuSelected(GpuRequirement selection, Set<GpuSpecification> specification) {
+    public RamSelection(RamRequirement selection, Set<RamSpecification> specification) {
         super(selection, specification);
         
         Validate.isTrue(selection.getNumberRange().isInRange(specification.size()));

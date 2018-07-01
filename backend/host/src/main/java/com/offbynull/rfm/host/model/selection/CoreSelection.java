@@ -1,4 +1,4 @@
-package com.offbynull.rfm.host.model.selected;
+package com.offbynull.rfm.host.model.selection;
 
 import com.offbynull.rfm.host.model.requirement.CoreRequirement;
 import com.offbynull.rfm.host.model.specification.CoreSpecification;
@@ -8,14 +8,14 @@ import org.apache.commons.collections4.set.UnmodifiableSet;
 import static org.apache.commons.collections4.set.UnmodifiableSet.unmodifiableSet;
 import org.apache.commons.lang3.Validate;
 
-public final class CoreSelected extends Selected<CoreRequirement, CoreSpecification> {
+public final class CoreSelection extends Selection<CoreRequirement, CoreSpecification> {
     
-    private final UnmodifiableSet<CpuSelected> cpusSelected;
+    private final UnmodifiableSet<CpuSelection> cpusSelected;
     
-    public CoreSelected(CoreRequirement selection, Set<CoreSpecification> specification, Set<CpuSelected> cpusSelected) {
+    public CoreSelection(CoreRequirement selection, Set<CoreSpecification> specification, Set<CpuSelection> cpusSelected) {
         super(selection, specification);
         
-        this.cpusSelected = (UnmodifiableSet<CpuSelected>) unmodifiableSet(new HashSet<>(cpusSelected));
+        this.cpusSelected = (UnmodifiableSet<CpuSelection>) unmodifiableSet(new HashSet<>(cpusSelected));
         
         isDistinctSpecifications(cpusSelected);
         isDistinctSelections(cpusSelected);
@@ -23,7 +23,7 @@ public final class CoreSelected extends Selected<CoreRequirement, CoreSpecificat
         Validate.isTrue(selection.getNumberRange().isInRange(specification.size()));
     }
 
-    public UnmodifiableSet<CpuSelected> getCpusSelected() {
+    public UnmodifiableSet<CpuSelection> getCpusSelected() {
         return cpusSelected;
     }
 

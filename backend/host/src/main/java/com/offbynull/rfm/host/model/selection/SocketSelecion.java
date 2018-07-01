@@ -1,4 +1,4 @@
-package com.offbynull.rfm.host.model.selected;
+package com.offbynull.rfm.host.model.selection;
 
 import com.offbynull.rfm.host.model.requirement.SocketRequirement;
 import com.offbynull.rfm.host.model.specification.SocketSpecification;
@@ -8,14 +8,14 @@ import org.apache.commons.collections4.set.UnmodifiableSet;
 import static org.apache.commons.collections4.set.UnmodifiableSet.unmodifiableSet;
 import org.apache.commons.lang3.Validate;
 
-public final class SocketSelected extends Selected<SocketRequirement, SocketSpecification> {
+public final class SocketSelecion extends Selection<SocketRequirement, SocketSpecification> {
     
-    private final UnmodifiableSet<CoreSelected> coresSelected;
+    private final UnmodifiableSet<CoreSelection> coresSelected;
     
-    public SocketSelected(SocketRequirement selection, Set<SocketSpecification> specification, Set<CoreSelected> coresSelected) {
+    public SocketSelecion(SocketRequirement selection, Set<SocketSpecification> specification, Set<CoreSelection> coresSelected) {
         super(selection, specification);
         
-        this.coresSelected = (UnmodifiableSet<CoreSelected>) unmodifiableSet(new HashSet<>(coresSelected));
+        this.coresSelected = (UnmodifiableSet<CoreSelection>) unmodifiableSet(new HashSet<>(coresSelected));
         
         isDistinctSpecifications(coresSelected);
         isDistinctSelections(coresSelected);
@@ -23,7 +23,7 @@ public final class SocketSelected extends Selected<SocketRequirement, SocketSpec
         Validate.isTrue(selection.getNumberRange().isInRange(specification.size()));
     }
 
-    public UnmodifiableSet<CoreSelected> getCoresSelected() {
+    public UnmodifiableSet<CoreSelection> getCoresSelected() {
         return coresSelected;
     }
     

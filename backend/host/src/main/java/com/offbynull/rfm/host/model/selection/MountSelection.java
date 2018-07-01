@@ -1,14 +1,14 @@
-package com.offbynull.rfm.host.model.selected;
+package com.offbynull.rfm.host.model.selection;
 
 import com.offbynull.rfm.host.model.requirement.NumberRange;
-import com.offbynull.rfm.host.model.requirement.RamRequirement;
-import com.offbynull.rfm.host.model.specification.RamSpecification;
+import com.offbynull.rfm.host.model.requirement.MountRequirement;
+import com.offbynull.rfm.host.model.specification.MountSpecification;
 import java.util.Set;
 import org.apache.commons.lang3.Validate;
 
-public final class RamSelected extends Selected<RamRequirement, RamSpecification> {
+public final class MountSelection extends Selection<MountRequirement, MountSpecification> {
     
-    public RamSelected(RamRequirement selection, Set<RamSpecification> specification) {
+    public MountSelection(MountRequirement selection, Set<MountSpecification> specification) {
         super(selection, specification);
         
         Validate.isTrue(selection.getNumberRange().isInRange(specification.size()));
