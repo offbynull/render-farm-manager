@@ -53,4 +53,13 @@ public final class NumberRange {
     public int compareEnd(long i) {
         return end.compareTo(BigDecimal.valueOf(i));
     }
+
+    public boolean isInRange(long i) {
+        return isInRange(BigDecimal.valueOf(i));
+    }
+    
+    public boolean isInRange(BigDecimal bd) {
+        Validate.notNull(bd);
+        return bd.compareTo(start) >= 0 && bd.compareTo(end) <= 0;
+    }
 }

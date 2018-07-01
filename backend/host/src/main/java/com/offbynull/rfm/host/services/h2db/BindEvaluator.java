@@ -226,7 +226,7 @@ final class BindEvaluator {
 
             // Do all the children match?
             MultiValuedMap<String, Specification> children = drill(expressionEvaluator, scriptTags, selection, remainingSpecification);
-            if (!childrenMatch) {
+            if (children == null) {
                 continue;
             }
 
