@@ -12,6 +12,7 @@ import com.offbynull.rfm.host.model.specification.HostSpecification;
 import com.offbynull.rfm.host.model.specification.Specification;
 import com.offbynull.rfm.host.model.work.Work;
 import com.offbynull.rfm.host.model.worker.Worker;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
@@ -22,18 +23,19 @@ import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.EMPTY_MAP;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import static java.util.stream.Collectors.toMap;
+import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.list.UnmodifiableList;
 import org.apache.commons.collections4.map.UnmodifiableMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 final class BindEvaluator {
-    public static boolean evaluate(Worker worker, Work work) {
-        Validate.notNull(worker);
+    public static Set<Worker> evaluate(Work work, WorkerIterator workerIt) throws IOException {
+        Validate.notNull(workerIt);
         Validate.notNull(work);
         
         ExpressionEvaluator expressionEvaluator = new ExpressionEvaluator(EMPTY_MAP);
@@ -43,53 +45,56 @@ final class BindEvaluator {
         UnmodifiableMap<String, Object> tags = work.getTags();
         
         HostSelection hostSelection = parser.parseScriptReqs(tags, script);
-        HostSpecification hostSpecification = worker.getHostSpecification();
         
-        Expression whereExpr = hostSelection.getWhereCondition();
-        boolean hostMatches = (Boolean) expressionEvaluator.evaluate(whereExpr, tags);
-        if (!hostMatches) {
-            return false;
+        Set<Worker> foundWorkers = new HashSet<>();
+        while (workerIt.hasNext()) {
+            Worker worker = workerIt.next().getWorker();
+            HostSpecification hostSpecification = worker.getHostSpecification();
+
+            Expression whereExpr = hostSelection.getWhereCondition();
+            boolean hostMatches = (Boolean) expressionEvaluator.evaluate(whereExpr, tags);
+            if (!hostMatches) {
+                continue;
+            }
+
+            Set<HostSpecification> foundSpec = evaluateSelection(
+                    expressionEvaluator,
+                    tags,
+                    NumberRange.SINGLE,
+                    hostSelection,
+                    Set.of(hostSpecification));
+            
+            Validate.validState(foundSpec.size() <= 1); // sanity check
+            if (foundSpec.size() == 1) {
+                foundWorkers.add(worker);
+            }
+            
+            int len = foundWorkers.size();
+            if (hostSelection.getNumberRange().compareEnd(len) >= 0) {
+                break;
+            }
         }
         
-        return evaluate(expressionEvaluator, tags,
-                List.of(hostSelection),
-                List.of(hostSpecification));
+        int len = foundWorkers.size();
+        if (hostSelection.getNumberRange().compareStart(len) >= 0) {
+            return foundWorkers;
+        }
         
+        return null;
     }
     
-    private static <T extends Selection, U extends Specification> boolean drill(
+    private static MultiValuedMap<String, Specification> drill(
             ExpressionEvaluator expressionEvaluator,
             Map<String, Object> scriptTags,
-            T selection,
-            U specification) {
-        Map<String, Method> selectionMethods = stream(selection.getClass().getDeclaredMethods())
-                .filter(m -> m.getName().startsWith("get") && m.getName().endsWith("Selections"))
-                .filter(m -> (m.getModifiers() & Modifier.PUBLIC) != 0)
-                .filter(m -> (m.getModifiers() & Modifier.STATIC) == 0)
-                .filter(m -> m.getParameterCount() == 0)
-                .collect(toMap(m -> {
-                    String ret = m.getName();
-                    ret = StringUtils.removeStart(ret, "get");
-                    ret = StringUtils.removeEnd(ret, "Selections");
-                    ret = StringUtils.uncapitalize(ret);
-                    return ret;
-                }, m -> m));
-        Map<String, Method> specificationMethods = stream(specification.getClass().getDeclaredMethods())
-                .filter(m -> m.getName().startsWith("get") && m.getName().endsWith("Specification"))
-                .filter(m -> (m.getModifiers() & Modifier.PUBLIC) != 0)
-                .filter(m -> (m.getModifiers() & Modifier.STATIC) == 0)
-                .filter(m -> m.getParameterCount() == 0)
-                .collect(toMap(m -> {
-                    String ret = m.getName();
-                    ret = StringUtils.removeStart(ret, "get");
-                    ret = StringUtils.removeEnd(ret, "Selections");
-                    ret = StringUtils.uncapitalize(ret);
-                    return ret;
-                }, m -> m));
+            Selection selection,
+            Specification specification) {
+        Map<String, Method> selectionMethods = getChildSelectMethods(selection);
+        Map<String, Method> specificationMethods = getChildSpecificationMethods(specification);
         
         selectionMethods.remove("capacity");
         specificationMethods.remove("capacity");
         
+        MultiValuedMap<String, Specification> ret = new HashSetValuedHashMap<>();
         for (String name : selectionMethods.keySet()) {
             Method selectionMethod = selectionMethods.get(name);
             Method specificationMethod = specificationMethods.get(name);
@@ -104,19 +109,26 @@ final class BindEvaluator {
                 throw new IllegalStateException(roe); // should never happen
             }
             
+            Set<Specification> remainingSpecs = new HashSet<>(childSpecs);
             for (Selection childSelect : childSelects) {
                 SelectionType selectionType = childSelect.getSelectionType();
                 NumberRange numberRange = childSelect.getNumberRange();
-                while (!childSpecs.isEmpty()) {
-                    Set<Specification> foundSpecs = evaluateSelection(expressionEvaluator, scriptTags, numberRange, childSelect, childSpecs);
+                top:
+                while (!remainingSpecs.isEmpty()) {
+                    Set<Specification> foundSpecs = evaluateSelection(expressionEvaluator, scriptTags, numberRange, childSelect, remainingSpecs);
+                    if (foundSpecs == null) {
+                        return null;
+                    }
+
+                    ret.putAll(name, foundSpecs);
                     switch (selectionType) {
-                        case EACH:
-                            // Each child needs to be within the number range specified
-                            numberRange = childSelect.getNumberRange();
+                        case EACH: // Each child needs to be within the number range specified
                             break;
-                        case TOTAL:
-                            // All children combined need to be within the number range
+                        case TOTAL: // All children combined need to be within the number range
                             numberRange = subtract(numberRange, foundSpecs.size());
+                            if (numberRange == null) { // we've got the max we can take, break out of loop
+                                break top;
+                            }
                             break;
                         default:
                             throw new IllegalStateException();
@@ -125,7 +137,37 @@ final class BindEvaluator {
             }
         }
         
-        return true;
+        return ret;
+    }
+    
+    private static Map<String, Method> getChildSelectMethods(Selection selection) {
+        return stream(selection.getClass().getDeclaredMethods())
+                .filter(m -> m.getName().startsWith("get") && m.getName().endsWith("Selections"))
+                .filter(m -> (m.getModifiers() & Modifier.PUBLIC) != 0)
+                .filter(m -> (m.getModifiers() & Modifier.STATIC) == 0)
+                .filter(m -> m.getParameterCount() == 0)
+                .collect(toMap(m -> {
+                    String ret = m.getName();
+                    ret = StringUtils.removeStart(ret, "get");
+                    ret = StringUtils.removeEnd(ret, "Selections");
+                    ret = StringUtils.uncapitalize(ret);
+                    return ret;
+                }, m -> m));
+    }
+    
+    private static Map<String, Method> getChildSpecificationMethods(Specification specification) {
+        return stream(specification.getClass().getDeclaredMethods())
+                .filter(m -> m.getName().startsWith("get") && m.getName().endsWith("Specification"))
+                .filter(m -> (m.getModifiers() & Modifier.PUBLIC) != 0)
+                .filter(m -> (m.getModifiers() & Modifier.STATIC) == 0)
+                .filter(m -> m.getParameterCount() == 0)
+                .collect(toMap(m -> {
+                    String ret = m.getName();
+                    ret = StringUtils.removeStart(ret, "get");
+                    ret = StringUtils.removeEnd(ret, "Selections");
+                    ret = StringUtils.uncapitalize(ret);
+                    return ret;
+                }, m -> m));
     }
     
     private static NumberRange subtract(NumberRange numberRange, int size) {
@@ -183,7 +225,7 @@ final class BindEvaluator {
             }
 
             // Do all the children match?
-            boolean childrenMatch = drill(expressionEvaluator, scriptTags, selection, remainingSpecification);
+            MultiValuedMap<String, Specification> children = drill(expressionEvaluator, scriptTags, selection, remainingSpecification);
             if (!childrenMatch) {
                 continue;
             }

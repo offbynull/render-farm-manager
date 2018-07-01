@@ -26,6 +26,7 @@ import com.offbynull.rfm.host.service.StoredWorker;
 import java.io.IOException;
 import java.math.BigDecimal;
 import static java.math.BigDecimal.ZERO;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import javax.sql.DataSource;
@@ -134,7 +135,7 @@ public class H2dbHostService implements HostService {
             for (StoredWork storedWork : storedWorks) {
                 Worker worker = storedWorker.getWorker();
                 Work work = storedWork.getWork();
-                if (BindEvaluator.evaluate(worker, work)) {
+                if (BindEvaluator.evaluate(work)) {
                     return storedWork;
                 }
             }

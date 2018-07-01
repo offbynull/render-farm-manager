@@ -17,9 +17,15 @@
 package com.offbynull.rfm.host.model.selection;
 
 import java.math.BigDecimal;
+import static java.math.BigDecimal.ONE;
 import org.apache.commons.lang3.Validate;
 
 public final class NumberRange {
+    /**
+     * A number range of [1,1].
+     */
+    public static final NumberRange SINGLE = new NumberRange(ONE, ONE);
+    
     private final BigDecimal start;
     private final BigDecimal end;
 
@@ -38,5 +44,13 @@ public final class NumberRange {
 
     public BigDecimal getEnd() {
         return end;
+    }
+
+    public int compareStart(long i) {
+        return start.compareTo(BigDecimal.valueOf(i));
+    }
+
+    public int compareEnd(long i) {
+        return end.compareTo(BigDecimal.valueOf(i));
     }
 }
