@@ -16,13 +16,13 @@
  */
 package com.offbynull.rfm.host.model.parser;
 
-import com.offbynull.rfm.host.model.selection.SelectionFunction;
-import com.offbynull.rfm.host.model.selection.SelectionFunctionBuiltIns;
+import com.offbynull.rfm.host.model.requirement.RequirementFunction;
+import com.offbynull.rfm.host.model.requirement.RequirementFunctionBuiltIns;
 import com.offbynull.rfm.host.model.work.Work;
 import com.offbynull.rfm.host.model.parser.antlr.EvalLexer;
 import com.offbynull.rfm.host.model.parser.antlr.EvalParser;
 import static com.offbynull.rfm.host.model.parser.antlr.EvalParser.VOCABULARY;
-import com.offbynull.rfm.host.model.selection.HostSelection;
+import com.offbynull.rfm.host.model.requirement.HostRequirement;
 import static java.lang.String.format;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 
 public final class Parser {
     
-    private final UnmodifiableList<SelectionFunction> requirementFunctions;
+    private final UnmodifiableList<RequirementFunction> requirementFunctions;
     private final UnmodifiableList<TagFunction> tagFunctions;
 
     /**
@@ -57,29 +57,29 @@ public final class Parser {
      * @param tagFunctions function function invocation points allowed in tag expressions
      * @throws NullPointerException if any argument is {@code null} or contains {@code null}
      */
-    public Parser(Collection<SelectionFunction> requirementFunctions, Collection<TagFunction> tagFunctions) {
+    public Parser(Collection<RequirementFunction> requirementFunctions, Collection<TagFunction> tagFunctions) {
         Validate.notNull(requirementFunctions);
         Validate.notNull(tagFunctions);
         Validate.noNullElements(requirementFunctions);
         Validate.noNullElements(tagFunctions);
 
-        List<SelectionFunction> allFunctions = new ArrayList<>(requirementFunctions);
+        List<RequirementFunction> allFunctions = new ArrayList<>(requirementFunctions);
         
-        FieldUtils.getAllFieldsList(SelectionFunctionBuiltIns.class).stream()
+        FieldUtils.getAllFieldsList(RequirementFunctionBuiltIns.class).stream()
                 .filter(f -> (f.getModifiers() & Modifier.STATIC) == Modifier.STATIC)
                 .filter(f -> f.isAccessible())
-                .filter(f -> f.getDeclaringClass() == SelectionFunctionBuiltIns.class)
-                .filter(f -> f.getType() == SelectionFunction.class)
+                .filter(f -> f.getDeclaringClass() == RequirementFunctionBuiltIns.class)
+                .filter(f -> f.getType() == RequirementFunction.class)
                 .forEach(f -> {
                     try {
-                        SelectionFunction builtin = (SelectionFunction) FieldUtils.readStaticField(f);
+                        RequirementFunction builtin = (RequirementFunction) FieldUtils.readStaticField(f);
                         allFunctions.add(builtin);
                     } catch (IllegalAccessException iae) {
                         throw new IllegalStateException(iae); // should never happen
                     }
                 });
         
-        this.requirementFunctions = (UnmodifiableList<SelectionFunction>) unmodifiableList(new ArrayList<>(requirementFunctions));
+        this.requirementFunctions = (UnmodifiableList<RequirementFunction>) unmodifiableList(new ArrayList<>(requirementFunctions));
         this.tagFunctions = (UnmodifiableList<TagFunction>) unmodifiableList(new ArrayList<>(tagFunctions));
         
         Set<String> reqFunctionLookup = new HashSet<>();
@@ -126,7 +126,7 @@ public final class Parser {
         }
     }
 
-    public HostSelection parseScriptReqs(Map<String, Object> tags, String input) {
+    public HostRequirement parseScriptReqs(Map<String, Object> tags, String input) {
         Validate.notNull(tags); // contents of tags are verified in visitor.populateTagCache(), so don't worry about it here
         Validate.notNull(input);
 
@@ -135,7 +135,7 @@ public final class Parser {
         
         try {
             visitor.populateTagCache(tags);
-            return (HostSelection) visitor.visit(parser.reqEntry());
+            return (HostRequirement) visitor.visit(parser.reqEntry());
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }

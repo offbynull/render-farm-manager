@@ -14,47 +14,52 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.selection;
+package com.offbynull.rfm.host.model.requirement;
 
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast1;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
 import org.apache.commons.lang3.Validate;
 
 /**
- * CPU selection. Capacity is measured in CFS slices.
+ * Mount requirement. Capacity is measured in bytes.
  * @author Kasra Faghihi
  */
-public final class CpuSelection extends Selection implements CapacityEnabledSelection {
+public final class MountRequirement extends Requirement implements CapacityEnabledRequirement {
 
-    private final CapacitySelection capacitySelection;
+    private final CapacityRequirement capacityRequirement;
     
     /**
-     * Construct a {@link CpuSelection} object.
+     * Construct a {@link MountRequirement} object.
      * @param numberRange number range
-     * @param selectionType selection type
+     * @param requirementType requirement type
      * @param whereCondition where condition
-     * @param capacitySelection capacity selection (in CFS slices)
+     * @param capacityRequirement capacity requirement (in bytes)
      * @throws NullPointerException if any argument is {@code null}
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
-     * {@code NumberCheckUtils.isAtLeast0(numberRange.getStart())},
+     * {@code NumberCheckUtils.isAtLeast1(numberRange.getStart())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getStart())},
+     * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
      */
-    public CpuSelection(NumberRange numberRange, SelectionType selectionType, Expression whereCondition,
-            CapacitySelection capacitySelection) {
-        super(numberRange, selectionType, whereCondition);
+    public MountRequirement(NumberRange numberRange, RequirementType requirementType, Expression whereCondition,
+            CapacityRequirement capacityRequirement) {
+        super(numberRange, requirementType, whereCondition);
 
-        Validate.notNull(capacitySelection);
+        Validate.notNull(capacityRequirement);
         
         isAtLeast1(numberRange.getStart());
         isNonFractional(numberRange.getStart());
         isNonFractional(numberRange.getEnd());
         
-        this.capacitySelection = capacitySelection;
+        this.capacityRequirement = capacityRequirement;
     }
 
+    /**
+     * Get capacity requirement
+     * @return capacity requirement
+     */
     @Override
-    public CapacitySelection getCapacitySelection() {
-        return capacitySelection;
+    public CapacityRequirement getCapacityRequirement() {
+        return capacityRequirement;
     }
 }

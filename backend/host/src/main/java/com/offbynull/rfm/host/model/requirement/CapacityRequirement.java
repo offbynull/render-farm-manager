@@ -14,52 +14,41 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.selection;
+package com.offbynull.rfm.host.model.requirement;
 
-import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast0;
+import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast1;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
 import org.apache.commons.lang3.Validate;
 
 /**
- * GPU selection.
+ * Generic capacity requirement. Used to represent bytes, speed, etc..
  * @author Kasra Faghihi
  */
-public final class GpuSelection extends Selection implements CapacityEnabledSelection {
-    
-    private final CapacitySelection capacitySelection; // doesn't make sense being anything other than 0 or 1
-    
+public final class CapacityRequirement extends Requirement {
+
     /**
-     * Construct a {@link GpuSelection} object.
+     * Construct a {@link CapacityRequirement} object.
      * @param numberRange number range
-     * @param selectionType selection type
+     * @param requirementType requirement type
      * @param whereCondition where condition
-     * @param capacitySelection available selection
      * @throws NullPointerException if any argument is {@code null}
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
-     * {@code NumberCheckUtils.isAtLeast0(numberRange.getStart())},
+     * {@code NumberCheckUtils.isAtLeast1(numberRange.getStart())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getStart())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())},
-     * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
+     * {@code whereCondition instanceof BooleanLiteralExpression},
+     * {@code ((BooleanLiteralExpression) whereCondition).getValue() == Boolean.TRUE}
      */
-    public GpuSelection(NumberRange numberRange, SelectionType selectionType, Expression whereCondition,
-            CapacitySelection capacitySelection) {
-        super(numberRange, selectionType, whereCondition);
-        
-        Validate.notNull(capacitySelection);
-        
-        isAtLeast0(numberRange.getStart());
+    public CapacityRequirement(NumberRange numberRange, RequirementType requirementType, Expression whereCondition) {
+        super(numberRange, requirementType, whereCondition);
+
+        isAtLeast1(numberRange.getStart());
         isNonFractional(numberRange.getStart());
         isNonFractional(numberRange.getEnd());
         
-        this.capacitySelection = capacitySelection;
+        // Where condition must always be set to true (defaults to true if it's nonexistant in the parser)
+        Validate.isTrue(whereCondition instanceof BooleanLiteralExpression);
+        Validate.isTrue(((BooleanLiteralExpression) whereCondition).getValue() == Boolean.TRUE);
     }
-
-    /**
-     * Get capacity selection
-     * @return capacity selection
-     */
-    @Override
-    public CapacitySelection getCapacitySelection() {
-        return capacitySelection;
-    }
+    
 }

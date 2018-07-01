@@ -14,29 +14,29 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.selection;
+package com.offbynull.rfm.host.model.requirement;
 
-import static com.offbynull.rfm.host.model.selection.DataType.BOOLEAN;
+import static com.offbynull.rfm.host.model.requirement.DataType.BOOLEAN;
 import org.apache.commons.lang3.Validate;
 
 /**
- * Abstract selection.
+ * Abstract requirement.
  * @author Kasra Faghihi
  */
-public abstract class Selection {
+public abstract class Requirement {
     private final NumberRange numberRange;
-    private final SelectionType selectionType;
+    private final RequirementType requirementType;
     private final Expression whereCondition;
 
-    Selection(NumberRange numberRange, SelectionType selectionType, Expression whereCondition) {
+    Requirement(NumberRange numberRange, RequirementType requirementType, Expression whereCondition) {
         Validate.notNull(numberRange);
-        Validate.notNull(selectionType);
+        Validate.notNull(requirementType);
         Validate.notNull(whereCondition);
 
         Validate.isTrue(BOOLEAN == whereCondition.getType());
 
         this.numberRange = numberRange;
-        this.selectionType = selectionType;
+        this.requirementType = requirementType;
         this.whereCondition = whereCondition;
     }
 
@@ -49,11 +49,11 @@ public abstract class Selection {
     }
 
     /**
-     * Get selection type.
-     * @return selection type
+     * Get requirement type.
+     * @return requirement type
      */
-    public SelectionType getSelectionType() {
-        return selectionType;
+    public RequirementType getRequirementType() {
+        return requirementType;
     }
     
     /**

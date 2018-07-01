@@ -1,12 +1,11 @@
 package com.offbynull.rfm.host.services.h2db;
 
 import com.offbynull.rfm.host.model.parser.Parser;
-import com.offbynull.rfm.host.model.selection.CapacityEnabledSelection;
-import com.offbynull.rfm.host.model.selection.Expression;
-import com.offbynull.rfm.host.model.selection.HostSelection;
-import com.offbynull.rfm.host.model.selection.NumberRange;
-import com.offbynull.rfm.host.model.selection.Selection;
-import com.offbynull.rfm.host.model.selection.SelectionType;
+import com.offbynull.rfm.host.model.requirement.Expression;
+import com.offbynull.rfm.host.model.requirement.HostRequirement;
+import com.offbynull.rfm.host.model.requirement.NumberRange;
+import com.offbynull.rfm.host.model.requirement.Requirement;
+import com.offbynull.rfm.host.model.requirement.RequirementType;
 import com.offbynull.rfm.host.model.specification.CapacityEnabledSpecification;
 import com.offbynull.rfm.host.model.specification.HostSpecification;
 import com.offbynull.rfm.host.model.specification.Specification;
@@ -32,6 +31,7 @@ import org.apache.commons.collections4.map.UnmodifiableMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import com.offbynull.rfm.host.model.requirement.CapacityEnabledRequirement;
 
 final class BindEvaluator {
     public static Set<Worker> evaluate(Work work, WorkerIterator workerIt) throws IOException {
@@ -44,7 +44,7 @@ final class BindEvaluator {
         String script = work.getRequirementsScript();
         UnmodifiableMap<String, Object> tags = work.getTags();
         
-        HostSelection hostSelection = parser.parseScriptReqs(tags, script);
+        HostRequirement hostSelection = parser.parseScriptReqs(tags, script);
         
         Set<Worker> foundWorkers = new HashSet<>();
         while (workerIt.hasNext()) {
@@ -86,7 +86,7 @@ final class BindEvaluator {
     private static MultiValuedMap<String, Specification> drill(
             ExpressionEvaluator expressionEvaluator,
             Map<String, Object> scriptTags,
-            Selection selection,
+            Requirement selection,
             Specification specification) {
         Map<String, Method> selectionMethods = getChildSelectMethods(selection);
         Map<String, Method> specificationMethods = getChildSpecificationMethods(specification);
@@ -99,19 +99,19 @@ final class BindEvaluator {
             Method selectionMethod = selectionMethods.get(name);
             Method specificationMethod = specificationMethods.get(name);
             
-            UnmodifiableList<Selection> childSelects;
+            UnmodifiableList<Requirement> childSelects;
             UnmodifiableList<Specification> childSpecs;
             
             try {
-                childSelects = (UnmodifiableList<Selection>) selectionMethod.invoke(selection);
+                childSelects = (UnmodifiableList<Requirement>) selectionMethod.invoke(selection);
                 childSpecs = (UnmodifiableList<Specification>) specificationMethod.invoke(specification);
             } catch (ReflectiveOperationException roe) {
                 throw new IllegalStateException(roe); // should never happen
             }
             
             Set<Specification> remainingSpecs = new HashSet<>(childSpecs);
-            for (Selection childSelect : childSelects) {
-                SelectionType selectionType = childSelect.getSelectionType();
+            for (Requirement childSelect : childSelects) {
+                RequirementType selectionType = childSelect.getRequirementType();
                 NumberRange numberRange = childSelect.getNumberRange();
                 top:
                 while (!remainingSpecs.isEmpty()) {
@@ -140,7 +140,7 @@ final class BindEvaluator {
         return ret;
     }
     
-    private static Map<String, Method> getChildSelectMethods(Selection selection) {
+    private static Map<String, Method> getChildSelectMethods(Requirement selection) {
         return stream(selection.getClass().getDeclaredMethods())
                 .filter(m -> m.getName().startsWith("get") && m.getName().endsWith("Selections"))
                 .filter(m -> (m.getModifiers() & Modifier.PUBLIC) != 0)
@@ -186,7 +186,7 @@ final class BindEvaluator {
         return new NumberRange(newStart, newEnd);
     }
     
-    private static <T extends Selection, U extends Specification> Set<U> evaluateSelection(
+    private static <T extends Requirement, U extends Specification> Set<U> evaluateSelection(
             ExpressionEvaluator expressionEvaluator,
             Map<String, Object> scriptTags,
             NumberRange selectionRange,
@@ -211,13 +211,13 @@ final class BindEvaluator {
             }
 
             // Does the spec have enough capacity?
-            boolean selectCapEnabled = selection instanceof CapacityEnabledSelection;
+            boolean selectCapEnabled = selection instanceof CapacityEnabledRequirement;
             boolean specCapEnabled = remainingSpecification instanceof CapacityEnabledSpecification;
               // sanity check -- selection and spec must both have capacity OR both not have capacity
             Validate.isTrue(!(selectCapEnabled ^ specCapEnabled));
               // if cap enabled, skip if not enough available
             if (selectCapEnabled && specCapEnabled) {
-                NumberRange capacitySelectionRange = ((CapacityEnabledSelection) selection).getCapacitySelection().getNumberRange();
+                NumberRange capacitySelectionRange = ((CapacityEnabledRequirement) selection).getCapacityRequirement().getNumberRange();
                 BigDecimal capacity = ((CapacityEnabledSpecification) remainingSpecification).getCapacity();
                 if (capacitySelectionRange.getStart().compareTo(capacity) < 0) {
                     continue;

@@ -1,6 +1,6 @@
 package com.offbynull.rfm.host.model.selected;
 
-import com.offbynull.rfm.host.model.selection.Selection;
+import com.offbynull.rfm.host.model.requirement.Requirement;
 import com.offbynull.rfm.host.model.specification.Specification;
 import java.util.HashSet;
 import java.util.Set;
@@ -8,7 +8,7 @@ import org.apache.commons.collections4.set.UnmodifiableSet;
 import static org.apache.commons.collections4.set.UnmodifiableSet.unmodifiableSet;
 import org.apache.commons.lang3.Validate;
 
-public abstract class Selected<T extends Selection, U extends Specification> {
+public abstract class Selected<T extends Requirement, U extends Specification> {
     private final T selection;
     private final UnmodifiableSet<U> specifications;
 

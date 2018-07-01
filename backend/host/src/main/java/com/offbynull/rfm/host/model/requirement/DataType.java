@@ -14,34 +14,17 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.selection;
-
-import org.apache.commons.lang3.Validate;
+package com.offbynull.rfm.host.model.requirement;
 
 /**
- * Literal expression node.
- * @param <T> type
+ * Supported data types.
  * @author Kasra Faghihi
  */
-public abstract class LiteralExpression<T> extends Expression {
-    
-    private final T value;
-    
-    LiteralExpression(DataType type, T value) {
-        super(type);
-        
-        Validate.notNull(type);
-        Validate.notNull(value);
-        
-        this.value = value;
-    }
-
-    /**
-     * Get value.
-     * @return value
-     */
-    public T getValue() {
-        return value;
-    }
-
+public enum DataType {
+    /** Boolean type. */
+    BOOLEAN,
+    /** Number type. */
+    NUMBER,
+    /** String type. */
+    STRING
 }

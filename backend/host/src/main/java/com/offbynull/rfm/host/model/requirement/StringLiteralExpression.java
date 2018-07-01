@@ -14,21 +14,22 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.selection;
+package com.offbynull.rfm.host.model.requirement;
 
-import static com.offbynull.rfm.host.model.selection.DataType.BOOLEAN;
+import static com.offbynull.rfm.host.model.requirement.DataType.STRING;
 
 /**
- * Boolean literal expression node.
+ * String literal expression node.
  * @author Kasra Faghihi
  */
-public final class BooleanLiteralExpression extends LiteralExpression {
+public final class StringLiteralExpression extends LiteralExpression<String> {
 
     /**
-     * Create a {@link BooleanLiteralExpression} object.
+     * Create a {@link StringLiteralExpression} object.
      * @param value value
+     * @throws NullPointerException if any argument is {@code null}
      */
-    public BooleanLiteralExpression(boolean value) {
-        super(BOOLEAN, value);
+    public StringLiteralExpression(String value) {
+        super(STRING, value);
     }
 }

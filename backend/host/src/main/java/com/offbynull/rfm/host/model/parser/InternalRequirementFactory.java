@@ -16,17 +16,17 @@
  */
 package com.offbynull.rfm.host.model.parser;
 
-import com.offbynull.rfm.host.model.selection.Expression;
-import com.offbynull.rfm.host.model.selection.NumberRange;
-import com.offbynull.rfm.host.model.selection.CapacitySelection;
-import com.offbynull.rfm.host.model.selection.CoreSelection;
-import com.offbynull.rfm.host.model.selection.CpuSelection;
-import com.offbynull.rfm.host.model.selection.SocketSelection;
-import com.offbynull.rfm.host.model.selection.MountSelection;
-import com.offbynull.rfm.host.model.selection.GpuSelection;
-import com.offbynull.rfm.host.model.selection.HostSelection;
-import com.offbynull.rfm.host.model.selection.RamSelection;
-import com.offbynull.rfm.host.model.selection.SelectionType;
+import com.offbynull.rfm.host.model.requirement.Expression;
+import com.offbynull.rfm.host.model.requirement.NumberRange;
+import com.offbynull.rfm.host.model.requirement.CapacityRequirement;
+import com.offbynull.rfm.host.model.requirement.CoreRequirement;
+import com.offbynull.rfm.host.model.requirement.CpuRequirement;
+import com.offbynull.rfm.host.model.requirement.SocketRequirement;
+import com.offbynull.rfm.host.model.requirement.MountRequirement;
+import com.offbynull.rfm.host.model.requirement.GpuRequirement;
+import com.offbynull.rfm.host.model.requirement.HostRequirement;
+import com.offbynull.rfm.host.model.requirement.RamRequirement;
+import com.offbynull.rfm.host.model.requirement.RequirementType;
 import static java.util.Arrays.asList;
 import org.apache.commons.lang3.Validate;
 
@@ -36,148 +36,148 @@ final class InternalRequirementFactory {
         // do nothing
     }
 
-    public static HostSelection host(
+    public static HostRequirement host(
             NumberRange numberRange,
-            SelectionType selectionType,
+            RequirementType selectionType,
             Expression whereCondition,
-            SocketSelection[] socketRequirements,
-            GpuSelection[] gpuRequirements,
-            RamSelection[] ramRequirements,
-            MountSelection[] mountRequirements) {
-        return new HostSelection(numberRange, selectionType, whereCondition,
+            SocketRequirement[] socketRequirements,
+            GpuRequirement[] gpuRequirements,
+            RamRequirement[] ramRequirements,
+            MountRequirement[] mountRequirements) {
+        return new HostRequirement(numberRange, selectionType, whereCondition,
                 asList(socketRequirements),
                 asList(gpuRequirements),
                 asList(ramRequirements),
                 asList(mountRequirements));
     }
     
-    public static HostSelection hosts(
+    public static HostRequirement hosts(
             NumberRange numberRange,
-            SelectionType selectionType,
+            RequirementType selectionType,
             Expression whereCondition,
-            SocketSelection[] socketRequirements,
-            GpuSelection[] gpuRequirements,
-            RamSelection[] ramRequirements,
-            MountSelection[] mountRequirements) {
+            SocketRequirement[] socketRequirements,
+            GpuRequirement[] gpuRequirements,
+            RamRequirement[] ramRequirements,
+            MountRequirement[] mountRequirements) {
         return host(numberRange, selectionType, whereCondition, socketRequirements, gpuRequirements, ramRequirements, mountRequirements);
     }
 
-    public static SocketSelection socket(
+    public static SocketRequirement socket(
             NumberRange numberRange,
-            SelectionType selectionType,
+            RequirementType selectionType,
             Expression whereCondition,
-            CoreSelection[] coreRequirements) {
-        return new SocketSelection(numberRange, selectionType, whereCondition,
+            CoreRequirement[] coreRequirements) {
+        return new SocketRequirement(numberRange, selectionType, whereCondition,
                 asList(coreRequirements));
     }
 
-    public static SocketSelection sockets(
+    public static SocketRequirement sockets(
             NumberRange numberRange,
-            SelectionType selectionType,
+            RequirementType selectionType,
             Expression whereCondition,
-            CoreSelection[] coreRequirements) {
+            CoreRequirement[] coreRequirements) {
         return socket(numberRange, selectionType, whereCondition, coreRequirements);
     }
 
-    public static CoreSelection core(
+    public static CoreRequirement core(
             NumberRange numberRange,
-            SelectionType selectionType,
+            RequirementType selectionType,
             Expression whereCondition,
-            CpuSelection[] cpuRequirements) {
-        return new CoreSelection(numberRange, selectionType, whereCondition,
+            CpuRequirement[] cpuRequirements) {
+        return new CoreRequirement(numberRange, selectionType, whereCondition,
                 asList(cpuRequirements));
     }
 
-    public static CoreSelection cores(
+    public static CoreRequirement cores(
             NumberRange numberRange,
-            SelectionType selectionType,
+            RequirementType selectionType,
             Expression whereCondition,
-            CpuSelection[] cpuRequirements) {
+            CpuRequirement[] cpuRequirements) {
         return core(numberRange, selectionType, whereCondition, cpuRequirements);
     }
 
-    public static CpuSelection cpu(
+    public static CpuRequirement cpu(
             NumberRange numberRange,
-            SelectionType selectionType,
+            RequirementType selectionType,
             Expression whereCondition,
-            CapacitySelection[] capacityRequirements) {
+            CapacityRequirement[] capacityRequirements) {
         Validate.isTrue(capacityRequirements.length == 1, "Exactly 1 capacity requirement required");
         
-        return new CpuSelection(numberRange, selectionType, whereCondition,
+        return new CpuRequirement(numberRange, selectionType, whereCondition,
                 capacityRequirements[0]);
     }
 
-    public static CpuSelection cpus(
+    public static CpuRequirement cpus(
             NumberRange numberRange,
-            SelectionType selectionType,
+            RequirementType selectionType,
             Expression whereCondition,
-            CapacitySelection[] capacityRequirements) {
+            CapacityRequirement[] capacityRequirements) {
         return cpu(numberRange, selectionType, whereCondition, capacityRequirements);
     }
 
-    public static GpuSelection gpu(
+    public static GpuRequirement gpu(
             NumberRange numberRange,
-            SelectionType selectionType,
+            RequirementType selectionType,
             Expression whereCondition,
-            CapacitySelection[] capacityRequirements) {
+            CapacityRequirement[] capacityRequirements) {
         
         Validate.isTrue(capacityRequirements.length == 1, "Exactly 1 capacity requirement required");
         
-        return new GpuSelection(numberRange, selectionType, whereCondition,
+        return new GpuRequirement(numberRange, selectionType, whereCondition,
                 capacityRequirements[0]);
     }
 
-    public static GpuSelection gpus(
+    public static GpuRequirement gpus(
             NumberRange numberRange,
-            SelectionType selectionType,
+            RequirementType selectionType,
             Expression whereCondition,
-            CapacitySelection[] capacityRequirements) {
+            CapacityRequirement[] capacityRequirements) {
         return gpu(numberRange, selectionType, whereCondition, capacityRequirements);
     }
 
-    public static RamSelection ram(
+    public static RamRequirement ram(
             NumberRange numberRange,
-            SelectionType selectionType,
+            RequirementType selectionType,
             Expression whereCondition,
-            CapacitySelection[] capacityRequirements) {
+            CapacityRequirement[] capacityRequirements) {
 
         Validate.isTrue(capacityRequirements.length == 1, "Exactly 1 capacity requirement required");
 
-        return new RamSelection(numberRange, selectionType, whereCondition,
+        return new RamRequirement(numberRange, selectionType, whereCondition,
                 capacityRequirements[0]);
     }
 
-    public static MountSelection mount(
+    public static MountRequirement mount(
             NumberRange numberRange,
-            SelectionType selectionType,
+            RequirementType selectionType,
             Expression whereCondition,
-            CapacitySelection[] capacityRequirements) {
+            CapacityRequirement[] capacityRequirements) {
 
         Validate.isTrue(capacityRequirements.length == 1, "Exactly 1 capacity requirement required");
         
-        return new MountSelection(numberRange, selectionType, whereCondition,
+        return new MountRequirement(numberRange, selectionType, whereCondition,
                 capacityRequirements[0]);
     }
 
-    public static MountSelection mounts(
+    public static MountRequirement mounts(
             NumberRange numberRange,
-            SelectionType selectionType,
+            RequirementType selectionType,
             Expression whereCondition,
-            CapacitySelection[] capacityRequirements) {
+            CapacityRequirement[] capacityRequirements) {
         return mount(numberRange, selectionType, whereCondition, capacityRequirements);
     }
     
-    public static CapacitySelection capacity(
+    public static CapacityRequirement capacity(
             NumberRange numberRange,
-            SelectionType selectionType,
+            RequirementType selectionType,
             Expression whereCondition) {
-        return new CapacitySelection(numberRange, selectionType, whereCondition);
+        return new CapacityRequirement(numberRange, selectionType, whereCondition);
     }
     
-    public static CapacitySelection available(
+    public static CapacityRequirement available(
             NumberRange numberRange,
-            SelectionType selectionType,
+            RequirementType selectionType,
             Expression whereCondition) {
-        return new CapacitySelection(numberRange, selectionType, whereCondition);
+        return new CapacityRequirement(numberRange, selectionType, whereCondition);
     }
 }

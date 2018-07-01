@@ -1,25 +1,25 @@
 package com.offbynull.rfm.host.model.parser;
 
-import com.offbynull.rfm.host.model.selection.SelectionFunction;
-import com.offbynull.rfm.host.model.selection.SelectionFunctionBuiltIns;
-import com.offbynull.rfm.host.model.selection.DataType;
-import com.offbynull.rfm.host.model.selection.VariableExpression;
-import com.offbynull.rfm.host.model.selection.NumberLiteralExpression;
-import com.offbynull.rfm.host.model.selection.BooleanLiteralExpression;
-import com.offbynull.rfm.host.model.selection.StringLiteralExpression;
-import com.offbynull.rfm.host.model.selection.InvocationExpression;
-import com.offbynull.rfm.host.model.selection.NumberRange;
-import com.offbynull.rfm.host.model.selection.CapacitySelection;
+import com.offbynull.rfm.host.model.requirement.RequirementFunction;
+import com.offbynull.rfm.host.model.requirement.RequirementFunctionBuiltIns;
+import com.offbynull.rfm.host.model.requirement.DataType;
+import com.offbynull.rfm.host.model.requirement.VariableExpression;
+import com.offbynull.rfm.host.model.requirement.NumberLiteralExpression;
+import com.offbynull.rfm.host.model.requirement.BooleanLiteralExpression;
+import com.offbynull.rfm.host.model.requirement.StringLiteralExpression;
+import com.offbynull.rfm.host.model.requirement.InvocationExpression;
+import com.offbynull.rfm.host.model.requirement.NumberRange;
+import com.offbynull.rfm.host.model.requirement.CapacityRequirement;
 import com.offbynull.rfm.host.model.work.Core;
-import com.offbynull.rfm.host.model.selection.CoreSelection;
-import com.offbynull.rfm.host.model.selection.CpuSelection;
-import com.offbynull.rfm.host.model.selection.SocketSelection;
-import com.offbynull.rfm.host.model.selection.MountSelection;
-import com.offbynull.rfm.host.model.selection.GpuSelection;
-import com.offbynull.rfm.host.model.selection.HostSelection;
-import com.offbynull.rfm.host.model.selection.RamSelection;
-import static com.offbynull.rfm.host.model.selection.SelectionType.EACH;
-import static com.offbynull.rfm.host.model.selection.SelectionType.TOTAL;
+import com.offbynull.rfm.host.model.requirement.CoreRequirement;
+import com.offbynull.rfm.host.model.requirement.CpuRequirement;
+import com.offbynull.rfm.host.model.requirement.SocketRequirement;
+import com.offbynull.rfm.host.model.requirement.MountRequirement;
+import com.offbynull.rfm.host.model.requirement.GpuRequirement;
+import com.offbynull.rfm.host.model.requirement.HostRequirement;
+import com.offbynull.rfm.host.model.requirement.RamRequirement;
+import static com.offbynull.rfm.host.model.requirement.RequirementType.EACH;
+import static com.offbynull.rfm.host.model.requirement.RequirementType.TOTAL;
 import com.offbynull.rfm.host.model.work.Work;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -43,8 +43,8 @@ public class ParserTest {
     
     @Before
     public void before() {
-        List<SelectionFunction> reqFunctions = new ArrayList<>();
-        reqFunctions.add(new SelectionFunction(DataType.STRING, "rtestfunc", DataType.NUMBER));
+        List<RequirementFunction> reqFunctions = new ArrayList<>();
+        reqFunctions.add(new RequirementFunction(DataType.STRING, "rtestfunc", DataType.NUMBER));
         
         List<TagFunction> tagFunctions = new ArrayList<>();
         tagFunctions.add(new TagFunction("abs", args -> ((BigDecimal) args.get(0)).abs()));
@@ -122,42 +122,42 @@ public class ParserTest {
         
         
         String reqsScript = work.getRequirementsScript();
-        HostSelection req = fixture.parseScriptReqs(tags, reqsScript);
+        HostRequirement req = fixture.parseScriptReqs(tags, reqsScript);
         
-        List<SocketSelection> socketReqs = req.getSocketSelections();
+        List<SocketRequirement> socketReqs = req.getSocketRequirements();
         assertEquals(1, socketReqs.size());
         assertRange(3L, 40L, socketReqs.get(0).getNumberRange());
         assertEquals(InvocationExpression.class, socketReqs.get(0).getWhereCondition().getClass());
-        List<CoreSelection> coreReqs = socketReqs.get(0).getCoreSelections();
+        List<CoreRequirement> coreReqs = socketReqs.get(0).getCoreRequirements();
         assertEquals(1, coreReqs.size());
         assertRange(1L, 9999L, coreReqs.get(0).getNumberRange());
         assertEquals(InvocationExpression.class, coreReqs.get(0).getWhereCondition().getClass());
-        List<CpuSelection> cpuReqs = coreReqs.get(0).getCpuSelections();
+        List<CpuRequirement> cpuReqs = coreReqs.get(0).getCpuRequirements();
         assertEquals(1, cpuReqs.size());
         assertRange(2L, 2L, cpuReqs.get(0).getNumberRange());
         assertEquals(BooleanLiteralExpression.class, cpuReqs.get(0).getWhereCondition().getClass());
-        CapacitySelection sliceReq = cpuReqs.get(0).getCapacitySelection();
+        CapacityRequirement sliceReq = cpuReqs.get(0).getCapacityRequirement();
         assertRange(100000L, 100000L, sliceReq.getNumberRange());
         assertEquals(BooleanLiteralExpression.class, sliceReq.getWhereCondition().getClass());
         
-        List<GpuSelection> gpuReqs = req.getGpuSelections();
+        List<GpuRequirement> gpuReqs = req.getGpuRequirements();
         assertEquals(1, gpuReqs.size());
         assertRange(1L, 5L, gpuReqs.get(0).getNumberRange());
         assertEquals(InvocationExpression.class, gpuReqs.get(0).getWhereCondition().getClass());
         
-        List<RamSelection> ramReqs = req.getRamSelections();
+        List<RamRequirement> ramReqs = req.getRamRequirements();
         assertEquals(1, ramReqs.size());
         assertRange(1L, 1L, ramReqs.get(0).getNumberRange());
         assertEquals(InvocationExpression.class, ramReqs.get(0).getWhereCondition().getClass());
-        CapacitySelection ramCapReq = ramReqs.get(0).getCapacitySelection();
+        CapacityRequirement ramCapReq = ramReqs.get(0).getCapacityRequirement();
         assertRange(4294967296L, 9663676416L, ramCapReq.getNumberRange());
         assertEquals(BooleanLiteralExpression.class, ramCapReq.getWhereCondition().getClass());
         
-        List<MountSelection> mountReqs = req.getMountSelections();
+        List<MountRequirement> mountReqs = req.getMountRequirements();
         assertEquals(1, mountReqs.size());
         assertRange(1L, 1L, mountReqs.get(0).getNumberRange());
         assertEquals(InvocationExpression.class, mountReqs.get(0).getWhereCondition().getClass());
-        CapacitySelection mountCapReq = mountReqs.get(0).getCapacitySelection();
+        CapacityRequirement mountCapReq = mountReqs.get(0).getCapacityRequirement();
         assertRange(10737418240L, 42949672960L, mountCapReq.getNumberRange());
         assertEquals(BooleanLiteralExpression.class, mountCapReq.getWhereCondition().getClass());
     }
@@ -175,15 +175,15 @@ public class ParserTest {
                 + "    1 ram { 4gb capacity }\n"
                 + "    1 mount { 10gb capacity }\n"
                 + "}");
-        HostSelection hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
+        HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
         
-        InvocationExpression expr = (InvocationExpression) hostReq.getGpuSelections().get(0).getWhereCondition();
-        assertEquals(SelectionFunctionBuiltIns.OR_B_BB_NAME, expr.getFunction().getName());
+        InvocationExpression expr = (InvocationExpression) hostReq.getGpuRequirements().get(0).getWhereCondition();
+        assertEquals(RequirementFunctionBuiltIns.OR_B_BB_NAME, expr.getFunction().getName());
         
         InvocationExpression     exprL = (InvocationExpression) expr.getArguments().get(0);               // cuda.n_major_version==7
         VariableExpression       exprLL = (VariableExpression) exprL.getArguments().get(0);                   // cuda.n_major_version
         NumberLiteralExpression  exprLR = (NumberLiteralExpression) exprL.getArguments().get(1);              // 7
-        assertEquals(SelectionFunctionBuiltIns.EQUAL_B_NN_NAME, exprL.getFunction().getName());
+        assertEquals(RequirementFunctionBuiltIns.EQUAL_B_NN_NAME, exprL.getFunction().getName());
         assertEquals("n_cuda_major_version", exprLL.getName());
         assertEquals("gpu", exprLL.getScope());
         assertEquals(7L, exprLR.getValue().longValueExact());
@@ -195,12 +195,12 @@ public class ParserTest {
         InvocationExpression     exprRR = (InvocationExpression) exprR.getArguments().get(1);             // cuda.n_sm_cores==12
         VariableExpression       exprRRL = (VariableExpression) exprRR.getArguments().get(0);                     // cuda.n_sm_cores
         NumberLiteralExpression  exprRRR = (NumberLiteralExpression) exprRR.getArguments().get(1);                // 12
-        assertEquals(SelectionFunctionBuiltIns.OR_B_BB_NAME, exprR.getFunction().getName());
-        assertEquals(SelectionFunctionBuiltIns.GREATER_THAN_B_NN_NAME, exprRL.getFunction().getName());
+        assertEquals(RequirementFunctionBuiltIns.OR_B_BB_NAME, exprR.getFunction().getName());
+        assertEquals(RequirementFunctionBuiltIns.GREATER_THAN_B_NN_NAME, exprRL.getFunction().getName());
         assertEquals("n_cuda_sm_cores", exprRLL.getName());
         assertEquals("gpu", exprRLL.getScope());
         assertEquals(12L, exprRLR.getValue().longValueExact());
-        assertEquals(SelectionFunctionBuiltIns.EQUAL_B_NN_NAME, exprRR.getFunction().getName());
+        assertEquals(RequirementFunctionBuiltIns.EQUAL_B_NN_NAME, exprRR.getFunction().getName());
         assertEquals("n_cuda_sm_cores", exprRRL.getName());
         assertEquals("gpu", exprRRL.getScope());
         assertEquals(12L, exprRRR.getValue().longValueExact());
@@ -320,21 +320,21 @@ public class ParserTest {
                 + "    1 ram { 4gb capacity }\n"
                 + "    1 mount { 10gb capacity }\n"
                 + "}");
-        HostSelection hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
+        HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
         
-        assertEquals(1,  hostReq.getSocketSelections().size());
-        SocketSelection socketReq = hostReq.getSocketSelections().get(0);
+        assertEquals(1,  hostReq.getSocketRequirements().size());
+        SocketRequirement socketReq = hostReq.getSocketRequirements().get(0);
         assertRange(1, 9999, socketReq.getNumberRange());
 
-        assertEquals(1, socketReq.getCoreSelections().size());
-        CoreSelection coreReq = socketReq.getCoreSelections().get(0);
+        assertEquals(1, socketReq.getCoreRequirements().size());
+        CoreRequirement coreReq = socketReq.getCoreRequirements().get(0);
         assertRange(1, 9999, coreReq.getNumberRange());
 
-        assertEquals(1, coreReq.getCpuSelections().size());
-        CpuSelection cpuReq = coreReq.getCpuSelections().get(0);
+        assertEquals(1, coreReq.getCpuRequirements().size());
+        CpuRequirement cpuReq = coreReq.getCpuRequirements().get(0);
         assertRange(1, 9999, cpuReq.getNumberRange());
 
-        CapacitySelection sliceReq = cpuReq.getCapacitySelection();
+        CapacityRequirement sliceReq = cpuReq.getCapacityRequirement();
         assertRange(100000, 100000, sliceReq.getNumberRange());
     }
     
@@ -353,26 +353,26 @@ public class ParserTest {
                 + "    1 ram { 4gb capacity }\n"
                 + "    1 mount { 10gb capacity }\n"
                 + "}");
-        HostSelection hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
+        HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
         
-        assertEquals(1,  hostReq.getSocketSelections().size());
-        SocketSelection socketReq = hostReq.getSocketSelections().get(0);
+        assertEquals(1,  hostReq.getSocketRequirements().size());
+        SocketRequirement socketReq = hostReq.getSocketRequirements().get(0);
         assertRange(1, 9999, socketReq.getNumberRange());
-        assertEquals(EACH, socketReq.getSelectionType());
+        assertEquals(EACH, socketReq.getRequirementType());
 
-        assertEquals(1, socketReq.getCoreSelections().size());
-        CoreSelection coreReq = socketReq.getCoreSelections().get(0);
+        assertEquals(1, socketReq.getCoreRequirements().size());
+        CoreRequirement coreReq = socketReq.getCoreRequirements().get(0);
         assertRange(1, 9999, coreReq.getNumberRange());
-        assertEquals(EACH, coreReq.getSelectionType());
+        assertEquals(EACH, coreReq.getRequirementType());
 
-        assertEquals(1, coreReq.getCpuSelections().size());
-        CpuSelection cpuReq = coreReq.getCpuSelections().get(0);
+        assertEquals(1, coreReq.getCpuRequirements().size());
+        CpuRequirement cpuReq = coreReq.getCpuRequirements().get(0);
         assertRange(1, 9999, cpuReq.getNumberRange());
-        assertEquals(EACH, cpuReq.getSelectionType());
+        assertEquals(EACH, cpuReq.getRequirementType());
 
-        CapacitySelection sliceReq = cpuReq.getCapacitySelection();
+        CapacityRequirement sliceReq = cpuReq.getCapacityRequirement();
         assertRange(100000, 999900000, sliceReq.getNumberRange());
-        assertEquals(TOTAL, sliceReq.getSelectionType());
+        assertEquals(TOTAL, sliceReq.getRequirementType());
     }
     
     @Test
@@ -390,24 +390,24 @@ public class ParserTest {
                 + "    1 ram { 4gb capacity }\n"
                 + "    1 mount { 10gb capacity }\n"
                 + "}");
-        HostSelection hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
+        HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
         
-        assertEquals(1,  hostReq.getSocketSelections().size());
-        SocketSelection socketReq = hostReq.getSocketSelections().get(0);
+        assertEquals(1,  hostReq.getSocketRequirements().size());
+        SocketRequirement socketReq = hostReq.getSocketRequirements().get(0);
         assertRange(1, 9999, socketReq.getNumberRange());
-        assertEquals(EACH, socketReq.getSelectionType());
+        assertEquals(EACH, socketReq.getRequirementType());
 
-        assertEquals(1, socketReq.getCoreSelections().size());
-        CoreSelection coreReq = socketReq.getCoreSelections().get(0);
+        assertEquals(1, socketReq.getCoreRequirements().size());
+        CoreRequirement coreReq = socketReq.getCoreRequirements().get(0);
         assertRange(1, 9999, coreReq.getNumberRange());
-        assertEquals(EACH, coreReq.getSelectionType());
+        assertEquals(EACH, coreReq.getRequirementType());
 
-        assertEquals(1, coreReq.getCpuSelections().size());
-        CpuSelection cpuReq = coreReq.getCpuSelections().get(0);
+        assertEquals(1, coreReq.getCpuRequirements().size());
+        CpuRequirement cpuReq = coreReq.getCpuRequirements().get(0);
         assertRange(4, 4, cpuReq.getNumberRange());
-        assertEquals(TOTAL, cpuReq.getSelectionType());
+        assertEquals(TOTAL, cpuReq.getRequirementType());
 
-        CapacitySelection sliceReq = cpuReq.getCapacitySelection();
+        CapacityRequirement sliceReq = cpuReq.getCapacityRequirement();
         assertRange(100000, 100000, sliceReq.getNumberRange());
     }
     
@@ -426,24 +426,24 @@ public class ParserTest {
                 + "    1 ram { 4gb capacity }\n"
                 + "    1 mount { 10gb capacity }\n"
                 + "}");
-        HostSelection hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
+        HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
         
-        assertEquals(1,  hostReq.getSocketSelections().size());
-        SocketSelection socketReq = hostReq.getSocketSelections().get(0);
+        assertEquals(1,  hostReq.getSocketRequirements().size());
+        SocketRequirement socketReq = hostReq.getSocketRequirements().get(0);
         assertRange(1, 9999, socketReq.getNumberRange());
-        assertEquals(EACH, socketReq.getSelectionType());
+        assertEquals(EACH, socketReq.getRequirementType());
 
-        assertEquals(1, socketReq.getCoreSelections().size());
-        CoreSelection coreReq = socketReq.getCoreSelections().get(0);
+        assertEquals(1, socketReq.getCoreRequirements().size());
+        CoreRequirement coreReq = socketReq.getCoreRequirements().get(0);
         assertRange(4, 4, coreReq.getNumberRange());
-        assertEquals(TOTAL, coreReq.getSelectionType());
+        assertEquals(TOTAL, coreReq.getRequirementType());
 
-        assertEquals(1, coreReq.getCpuSelections().size());
-        CpuSelection cpuReq = coreReq.getCpuSelections().get(0);
+        assertEquals(1, coreReq.getCpuRequirements().size());
+        CpuRequirement cpuReq = coreReq.getCpuRequirements().get(0);
         assertRange(1, 9999, cpuReq.getNumberRange());
-        assertEquals(EACH, cpuReq.getSelectionType());
+        assertEquals(EACH, cpuReq.getRequirementType());
 
-        CapacitySelection sliceReq = cpuReq.getCapacitySelection();
+        CapacityRequirement sliceReq = cpuReq.getCapacityRequirement();
         assertRange(100000, 100000, sliceReq.getNumberRange());
     }
     
@@ -462,24 +462,24 @@ public class ParserTest {
                 + "    1 ram { 4gb capacity }\n"
                 + "    1 mount { 10gb capacity }\n"
                 + "}");
-        HostSelection hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
+        HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
         
-        assertEquals(1,  hostReq.getSocketSelections().size());
-        SocketSelection socketReq = hostReq.getSocketSelections().get(0);
+        assertEquals(1,  hostReq.getSocketRequirements().size());
+        SocketRequirement socketReq = hostReq.getSocketRequirements().get(0);
         assertRange(4, 4, socketReq.getNumberRange());
-        assertEquals(TOTAL, socketReq.getSelectionType());
+        assertEquals(TOTAL, socketReq.getRequirementType());
 
-        assertEquals(1, socketReq.getCoreSelections().size());
-        CoreSelection coreReq = socketReq.getCoreSelections().get(0);
+        assertEquals(1, socketReq.getCoreRequirements().size());
+        CoreRequirement coreReq = socketReq.getCoreRequirements().get(0);
         assertRange(1, 9999, coreReq.getNumberRange());
-        assertEquals(EACH, coreReq.getSelectionType());
+        assertEquals(EACH, coreReq.getRequirementType());
 
-        assertEquals(1, coreReq.getCpuSelections().size());
-        CpuSelection cpuReq = coreReq.getCpuSelections().get(0);
+        assertEquals(1, coreReq.getCpuRequirements().size());
+        CpuRequirement cpuReq = coreReq.getCpuRequirements().get(0);
         assertRange(1, 9999, cpuReq.getNumberRange());
-        assertEquals(EACH, cpuReq.getSelectionType());
+        assertEquals(EACH, cpuReq.getRequirementType());
 
-        CapacitySelection sliceReq = cpuReq.getCapacitySelection();
+        CapacityRequirement sliceReq = cpuReq.getCapacityRequirement();
         assertRange(100000, 100000, sliceReq.getNumberRange());
     }
     
@@ -505,16 +505,16 @@ public class ParserTest {
                 + "    2 mount { 10gb capacity }\n"
                 + "    }\n"
                 + "}");
-        HostSelection hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
+        HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
 
-        assertEquals(1, hostReq.getMountSelections().size());
-        MountSelection mountReq = hostReq.getMountSelections().get(0);
+        assertEquals(1, hostReq.getMountRequirements().size());
+        MountRequirement mountReq = hostReq.getMountRequirements().get(0);
         assertRange(2, 2, mountReq.getNumberRange());
-        assertEquals(EACH, mountReq.getSelectionType());
+        assertEquals(EACH, mountReq.getRequirementType());
 
-        CapacitySelection capacityReq = mountReq.getCapacitySelection();
+        CapacityRequirement capacityReq = mountReq.getCapacityRequirement();
         assertRange(10737418240L, 10737418240L, capacityReq.getNumberRange());
-        assertEquals(EACH, capacityReq.getSelectionType());
+        assertEquals(EACH, capacityReq.getRequirementType());
     }
     
 
@@ -710,10 +710,10 @@ public class ParserTest {
                 + "    1 ram { 4gb capacity }\n"
                 + "    1 mount { 10gb capacity }\n"
                 + "}");
-        HostSelection hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
+        HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
         
         InvocationExpression expr = (InvocationExpression) hostReq.getWhereCondition();
-        assertEquals(SelectionFunctionBuiltIns.EQUAL_B_SS_NAME, expr.getFunction().getName());
+        assertEquals(RequirementFunctionBuiltIns.EQUAL_B_SS_NAME, expr.getFunction().getName());
         InvocationExpression exprL = (InvocationExpression) expr.getArguments().get(0);
         assertEquals("rtestfunc", exprL.getFunction().getName());
         assertEquals(asList(DataType.NUMBER), exprL.getFunction().getParameterTypes());
@@ -750,10 +750,10 @@ public class ParserTest {
         assertEquals(5, ((BigDecimal) tags.get("n_tag_b")).intValueExact());
         
         
-        HostSelection hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
+        HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
         
         InvocationExpression expr = (InvocationExpression) hostReq.getWhereCondition();
-        assertEquals(SelectionFunctionBuiltIns.EQUAL_B_NN_NAME, expr.getFunction().getName());
+        assertEquals(RequirementFunctionBuiltIns.EQUAL_B_NN_NAME, expr.getFunction().getName());
         NumberLiteralExpression exprL = (NumberLiteralExpression) expr.getArguments().get(0);
         assertEquals(-5, exprL.getValue().intValueExact());
         NumberLiteralExpression exprR = (NumberLiteralExpression) expr.getArguments().get(1);

@@ -16,30 +16,30 @@
  */
 package com.offbynull.rfm.host.model.parser;
 
-import com.offbynull.rfm.host.model.selection.SelectionFunction;
-import com.offbynull.rfm.host.model.selection.SelectionFunctionBuiltIns;
-import com.offbynull.rfm.host.model.selection.Expression;
-import com.offbynull.rfm.host.model.selection.DataType;
-import com.offbynull.rfm.host.model.selection.VariableExpression;
-import com.offbynull.rfm.host.model.selection.BooleanLiteralExpression;
-import com.offbynull.rfm.host.model.selection.NumberLiteralExpression;
-import com.offbynull.rfm.host.model.selection.InvocationExpression;
-import com.offbynull.rfm.host.model.selection.StringLiteralExpression;
-import com.offbynull.rfm.host.model.selection.NumberRange;
+import com.offbynull.rfm.host.model.requirement.RequirementFunction;
+import com.offbynull.rfm.host.model.requirement.RequirementFunctionBuiltIns;
+import com.offbynull.rfm.host.model.requirement.Expression;
+import com.offbynull.rfm.host.model.requirement.DataType;
+import com.offbynull.rfm.host.model.requirement.VariableExpression;
+import com.offbynull.rfm.host.model.requirement.BooleanLiteralExpression;
+import com.offbynull.rfm.host.model.requirement.NumberLiteralExpression;
+import com.offbynull.rfm.host.model.requirement.InvocationExpression;
+import com.offbynull.rfm.host.model.requirement.StringLiteralExpression;
+import com.offbynull.rfm.host.model.requirement.NumberRange;
 import com.offbynull.rfm.host.model.common.IdCheckUtils;
 import com.offbynull.rfm.host.model.work.Core;
 import static com.offbynull.rfm.host.model.parser.InternalUtils.getParserRuleText;
-import static com.offbynull.rfm.host.model.selection.DataType.BOOLEAN;
-import static com.offbynull.rfm.host.model.selection.DataType.NUMBER;
-import static com.offbynull.rfm.host.model.selection.DataType.STRING;
+import static com.offbynull.rfm.host.model.requirement.DataType.BOOLEAN;
+import static com.offbynull.rfm.host.model.requirement.DataType.NUMBER;
+import static com.offbynull.rfm.host.model.requirement.DataType.STRING;
 import com.offbynull.rfm.host.model.parser.antlr.EvalBaseVisitor;
 import com.offbynull.rfm.host.model.parser.antlr.EvalParser;
 import com.offbynull.rfm.host.model.parser.antlr.EvalParser.NumberRangeContext;
 import com.offbynull.rfm.host.model.parser.antlr.EvalParser.SelectionTypeContext;
-import com.offbynull.rfm.host.model.selection.HostSelection;
-import com.offbynull.rfm.host.model.selection.Selection;
-import com.offbynull.rfm.host.model.selection.SelectionType;
-import static com.offbynull.rfm.host.model.selection.SelectionType.EACH;
+import com.offbynull.rfm.host.model.requirement.HostRequirement;
+import com.offbynull.rfm.host.model.requirement.Requirement;
+import com.offbynull.rfm.host.model.requirement.RequirementType;
+import static com.offbynull.rfm.host.model.requirement.RequirementType.EACH;
 import com.offbynull.rfm.host.model.work.Work;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -78,22 +78,22 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
     private static final int MAX_SCALE = 10;
     private static final RoundingMode ROUNDING_MODE = RoundingMode.DOWN;
     
-    private final UnmodifiableMap<String, SelectionFunction> deferredFunctions;
+    private final UnmodifiableMap<String, RequirementFunction> deferredFunctions;
     private final UnmodifiableMap<String, TagFunction> immediateFunctions;
     
     private ParseState evalState;
     private final LinkedList<String> reqScope;
     private final Map<String, Object> tagCache;
 
-    ParserEvalVisitor(Collection<SelectionFunction> deferredFunctions, Collection<TagFunction> immediateFunctions) {
+    ParserEvalVisitor(Collection<RequirementFunction> deferredFunctions, Collection<TagFunction> immediateFunctions) {
         Validate.notNull(deferredFunctions);
         Validate.notNull(immediateFunctions);
         Validate.noNullElements(deferredFunctions);
         Validate.noNullElements(immediateFunctions);
         
-        Map<String, SelectionFunction> reqFunctionLookup = new HashMap<>();
+        Map<String, RequirementFunction> reqFunctionLookup = new HashMap<>();
         deferredFunctions.forEach(f -> {
-            SelectionFunction existing = reqFunctionLookup.put(f.getName(), f);
+            RequirementFunction existing = reqFunctionLookup.put(f.getName(), f);
             Validate.isTrue(existing == null, "Duplicate requirement function definition: %s", f.getName());
         });
         
@@ -103,7 +103,7 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
             Validate.isTrue(existing == null, "Duplicate tag function definition: %s", f.getName());
         });
 
-        this.deferredFunctions = (UnmodifiableMap<String, SelectionFunction>) unmodifiableMap(reqFunctionLookup);
+        this.deferredFunctions = (UnmodifiableMap<String, RequirementFunction>) unmodifiableMap(reqFunctionLookup);
         this.immediateFunctions = (UnmodifiableMap<String, TagFunction>) unmodifiableMap(tagFunctionLookup);
         this.reqScope = new LinkedList<>();
         this.tagCache = new HashMap<>();
@@ -130,9 +130,9 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
             tagCache.put(val.getKey(), val.getValue());
         }
 
-        Selection req = (Selection) visit(ctx.reqEntry()); // output not used, but this does do validation
+        Requirement req = (Requirement) visit(ctx.reqEntry()); // output not used, but this does do validation
         String reqText = getParserRuleText(ctx.reqEntry());
-        parseIsTrue(ctx.reqEntry(), req instanceof HostSelection, "Top-level requirement must be host");
+        parseIsTrue(ctx.reqEntry(), req instanceof HostRequirement, "Top-level requirement must be host");
         
         return new Work(core, new HashMap<>(tagCache), reqText);
     }
@@ -208,10 +208,10 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
         
         // Get selection type
         SelectionTypeContext selectionTypeCtx = ctx.selectionType();
-        SelectionType selectionType;
+        RequirementType selectionType;
         if (selectionTypeCtx != null) {
             String val = selectionTypeCtx.getText().toUpperCase(ENGLISH);
-            selectionType = SelectionType.valueOf(val);
+            selectionType = RequirementType.valueOf(val);
         } else {
             selectionType = EACH;
         }
@@ -232,10 +232,10 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
         // Get factory method for requirement
         Method method = stream(InternalRequirementFactory.class.getMethods())
                 .filter(m -> m.getName().equals(name))                                  // match name
-                .filter(m -> Selection.class.isAssignableFrom(m.getReturnType()))     // match ret type
+                .filter(m -> Requirement.class.isAssignableFrom(m.getReturnType()))     // match ret type
                 .filter(m -> m.getParameterCount() >= 3)                                // must have >= 2 params
                 .filter(m -> m.getParameterTypes()[0] == NumberRange.class)             // param[0] must be numberrange
-                .filter(m -> m.getParameterTypes()[1] == SelectionType.class)           // param[1] must be selectiontype
+                .filter(m -> m.getParameterTypes()[1] == RequirementType.class)           // param[1] must be selectiontype
                 .filter(m -> m.getParameterTypes()[2] == Expression.class)              // param[1] must be expression
                 .filter(m -> (m.getModifiers() & Modifier.STATIC) != 0)                 // must be static
                 .findAny().orElseThrow(() -> new ParserEvalException(ctx, "Unrecognized requirement type: %s", name));
@@ -243,8 +243,8 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
         
         
         // Calculate sub-requirements
-        Map<Class<?>, List<Selection>> subReqs = ctx.reqEntry().stream()
-                .map(x -> (Selection) visit(x))
+        Map<Class<?>, List<Requirement>> subReqs = ctx.reqEntry().stream()
+                .map(x -> (Requirement) visit(x))
                 .collect(groupingBy(x -> x.getClass()));
         
         
@@ -263,15 +263,15 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
         expectedReqTypes.stream()
                 .map(c -> c.getComponentType()) // req args for factory method are always arrays, so get the component type of that array
                 .forEachOrdered(c -> {
-                    List<Selection> reqArg = subReqs.getOrDefault(c, Collections.EMPTY_LIST);             // get (or none if non-existant)
+                    List<Requirement> reqArg = subReqs.getOrDefault(c, Collections.EMPTY_LIST);             // get (or none if non-existant)
                     Object reqArgAsArr = reqArg.stream().toArray(l -> (Object[]) Array.newInstance(c, l));  // to array
                     invokeArgs.add(reqArgAsArr);                                                            // append to invokeArgs
                 });
 
         method.setAccessible(true);
-        Selection ret;
+        Requirement ret;
         try {
-            ret = (Selection) method.invoke(null, invokeArgs.toArray());
+            ret = (Requirement) method.invoke(null, invokeArgs.toArray());
         } catch (InvocationTargetException ite) {
             throw new ParserEvalException(ctx, ite, "Bad requirement: %s", ite.getCause().getMessage());
         } catch (ReflectiveOperationException | RuntimeException e) {
@@ -342,7 +342,7 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
         Expression expr = (Expression) visit(ctx.expr());
         parseIsTrue(ctx, expr.getType() == BOOLEAN, "Negate operator cannot operate on (%s)", expr.getType());
 
-        return new InvocationExpression(SelectionFunctionBuiltIns.NOT_B_B_FUNCTION, expr);
+        return new InvocationExpression(RequirementFunctionBuiltIns.NOT_B_B_FUNCTION, expr);
     }
 
     
@@ -384,9 +384,9 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
 
         switch (ctx.op.getType()) {
             case EvalParser.DIVIDE:
-                return new InvocationExpression(SelectionFunctionBuiltIns.DIVIDE_N_NN_FUNCTION, left, right);
+                return new InvocationExpression(RequirementFunctionBuiltIns.DIVIDE_N_NN_FUNCTION, left, right);
             case EvalParser.MULTIPLY:
-                return new InvocationExpression(SelectionFunctionBuiltIns.MULTIPLY_N_NN_FUNCTION, left, right);
+                return new InvocationExpression(RequirementFunctionBuiltIns.MULTIPLY_N_NN_FUNCTION, left, right);
             default:
                 throw new IllegalStateException();
         }
@@ -432,9 +432,9 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
 
         switch (ctx.op.getType()) {
             case EvalParser.ADDITION:
-                return new InvocationExpression(SelectionFunctionBuiltIns.ADD_N_NN_FUNCTION, left, right);
+                return new InvocationExpression(RequirementFunctionBuiltIns.ADD_N_NN_FUNCTION, left, right);
             case EvalParser.SUBTRACT:
-                return new InvocationExpression(SelectionFunctionBuiltIns.SUB_N_NN_FUNCTION, left, right);
+                return new InvocationExpression(RequirementFunctionBuiltIns.SUB_N_NN_FUNCTION, left, right);
             default:
                 throw new IllegalStateException(); // should never happen
         }
@@ -487,18 +487,18 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
 
         switch (ctx.op.getType()) {
             case EvalParser.GREATER_THAN:
-                return new InvocationExpression(SelectionFunctionBuiltIns.GREATER_THAN_B_NN_FUNCTION, left, right);
+                return new InvocationExpression(RequirementFunctionBuiltIns.GREATER_THAN_B_NN_FUNCTION, left, right);
             case EvalParser.LESS_THAN:
-                return new InvocationExpression(SelectionFunctionBuiltIns.LESS_THAN_B_NN_FUNCTION, left, right);
+                return new InvocationExpression(RequirementFunctionBuiltIns.LESS_THAN_B_NN_FUNCTION, left, right);
             case EvalParser.GREATER_THAN_OR_EQUALS: {
-                InvocationExpression gtInvoke = new InvocationExpression(SelectionFunctionBuiltIns.GREATER_THAN_B_NN_FUNCTION, left, right);
-                InvocationExpression eqInvoke = new InvocationExpression(SelectionFunctionBuiltIns.EQUAL_B_NN_FUNCTION, left, right);
-                return new InvocationExpression(SelectionFunctionBuiltIns.OR_B_BB_FUNCTION, gtInvoke, eqInvoke);
+                InvocationExpression gtInvoke = new InvocationExpression(RequirementFunctionBuiltIns.GREATER_THAN_B_NN_FUNCTION, left, right);
+                InvocationExpression eqInvoke = new InvocationExpression(RequirementFunctionBuiltIns.EQUAL_B_NN_FUNCTION, left, right);
+                return new InvocationExpression(RequirementFunctionBuiltIns.OR_B_BB_FUNCTION, gtInvoke, eqInvoke);
             }
             case EvalParser.LESS_THAN_OR_EQUALS: {
-                InvocationExpression ltInvoke = new InvocationExpression(SelectionFunctionBuiltIns.LESS_THAN_B_NN_FUNCTION, left, right);
-                InvocationExpression eqInvoke = new InvocationExpression(SelectionFunctionBuiltIns.EQUAL_B_NN_FUNCTION, left, right);
-                return new InvocationExpression(SelectionFunctionBuiltIns.OR_B_BB_FUNCTION, ltInvoke, eqInvoke);
+                InvocationExpression ltInvoke = new InvocationExpression(RequirementFunctionBuiltIns.LESS_THAN_B_NN_FUNCTION, left, right);
+                InvocationExpression eqInvoke = new InvocationExpression(RequirementFunctionBuiltIns.EQUAL_B_NN_FUNCTION, left, right);
+                return new InvocationExpression(RequirementFunctionBuiltIns.OR_B_BB_FUNCTION, ltInvoke, eqInvoke);
             }
             default:
                 throw new IllegalStateException(); // should never happen
@@ -553,16 +553,16 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
                 left.getType() == right.getType(),
                 "Equality operators cannot operate on (%s,%s)", left.getType(), right.getType());
 
-        SelectionFunction eqFunc = null;
+        RequirementFunction eqFunc = null;
         switch (left.getType()) {
             case BOOLEAN:
-                eqFunc = SelectionFunctionBuiltIns.EQUAL_B_BB_FUNCTION;
+                eqFunc = RequirementFunctionBuiltIns.EQUAL_B_BB_FUNCTION;
                 break;
             case NUMBER:
-                eqFunc = SelectionFunctionBuiltIns.EQUAL_B_NN_FUNCTION;
+                eqFunc = RequirementFunctionBuiltIns.EQUAL_B_NN_FUNCTION;
                 break;
             case STRING:
-                eqFunc = SelectionFunctionBuiltIns.EQUAL_B_SS_FUNCTION;
+                eqFunc = RequirementFunctionBuiltIns.EQUAL_B_SS_FUNCTION;
                 break;
             default:
                 throw new IllegalStateException(); // should never happen
@@ -572,7 +572,7 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
                 return new InvocationExpression(eqFunc, left, right);
             case EvalParser.NOT_EQUALS: {
                 InvocationExpression eqInvoke = new InvocationExpression(eqFunc, left, right);
-                return new InvocationExpression(SelectionFunctionBuiltIns.NOT_B_B_FUNCTION, eqInvoke);
+                return new InvocationExpression(RequirementFunctionBuiltIns.NOT_B_B_FUNCTION, eqInvoke);
             }
             default:
                 throw new IllegalStateException(); // should never happen
@@ -611,7 +611,7 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
                 left.getType() == BOOLEAN && right.getType() == BOOLEAN,
                 "And operator cannot operate on (%s,%s)", left.getType(), right.getType());
 
-        return new InvocationExpression(SelectionFunctionBuiltIns.AND_B_BB_FUNCTION, left, right);
+        return new InvocationExpression(RequirementFunctionBuiltIns.AND_B_BB_FUNCTION, left, right);
     }
 
 
@@ -646,7 +646,7 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
                 left.getType() == BOOLEAN && right.getType() == BOOLEAN,
                 "Or operator cannot operate on (%s,%s)", left.getType(), right.getType());
 
-        return new InvocationExpression(SelectionFunctionBuiltIns.OR_B_BB_FUNCTION, left, right);
+        return new InvocationExpression(RequirementFunctionBuiltIns.OR_B_BB_FUNCTION, left, right);
     }
 
 
@@ -737,7 +737,7 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
                 .map(exprCtx -> (Expression) visit(exprCtx))
                 .collect(toList());
 
-        SelectionFunction func = deferredFunctions.get(name);
+        RequirementFunction func = deferredFunctions.get(name);
         parseIsTrue(ctx, func != null, "Unrecognized function %s", name);
 
         List<DataType> actualArgTypes = args.stream().map(e -> e.getType()).collect(toList());

@@ -14,9 +14,9 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.selection;
+package com.offbynull.rfm.host.model.requirement;
 
-import static com.offbynull.rfm.host.model.selection.DataType.NUMBER;
+import static com.offbynull.rfm.host.model.requirement.DataType.NUMBER;
 import java.math.BigDecimal;
 
 /**

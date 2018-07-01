@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.selection;
+package com.offbynull.rfm.host.model.requirement;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,14 +24,14 @@ import static org.apache.commons.collections4.list.UnmodifiableList.unmodifiable
 import org.apache.commons.lang3.Validate;
 
 // REMEMBER tag functions are evaluated at runtime to literals/constants -- they'll never be represented as invocation nodes. Invocation
-// nodes are explicitly for selections because they get invoked when trying to find a hosts instead of when script is built.
+// nodes are explicitly for requirements because they get invoked when trying to find a hosts instead of when script is built.
 
 /**
  * Function invocation expression node.
  * @author Kasra Faghihi
  */
 public final class InvocationExpression extends Expression {
-    private final SelectionFunction function;
+    private final RequirementFunction function;
     private final UnmodifiableList<Expression> arguments;
 
     /**
@@ -42,7 +42,7 @@ public final class InvocationExpression extends Expression {
      * @throws IllegalArgumentException if any of the follows conditions are NOT met:
      * {@code !arguments.contains(null) }
      */
-    public InvocationExpression(SelectionFunction function, Expression... arguments) {
+    public InvocationExpression(RequirementFunction function, Expression... arguments) {
         this(function, Arrays.asList(arguments));
     }
 
@@ -54,7 +54,7 @@ public final class InvocationExpression extends Expression {
      * @throws IllegalArgumentException if any of the follows conditions are NOT met:
      * {@code !arguments.contains(null) }
      */
-    public InvocationExpression(SelectionFunction function, List<Expression> arguments) {
+    public InvocationExpression(RequirementFunction function, List<Expression> arguments) {
         super(function.getReturnType());
         
         Validate.notNull(function);
@@ -69,7 +69,7 @@ public final class InvocationExpression extends Expression {
      * Get function name and signature.
      * @return function
      */
-    public SelectionFunction getFunction() {
+    public RequirementFunction getFunction() {
         return function;
     }
 

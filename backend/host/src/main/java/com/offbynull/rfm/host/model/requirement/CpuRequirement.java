@@ -14,41 +14,47 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.selection;
+package com.offbynull.rfm.host.model.requirement;
 
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast1;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
 import org.apache.commons.lang3.Validate;
 
 /**
- * Generic capacity requirement. Used to represent bytes, speed, etc..
+ * CPU requirement. Capacity is measured in CFS slices.
  * @author Kasra Faghihi
  */
-public final class CapacitySelection extends Selection {
+public final class CpuRequirement extends Requirement implements CapacityEnabledRequirement {
 
+    private final CapacityRequirement capacityRequirement;
+    
     /**
-     * Construct a {@link CapacitySelection} object.
+     * Construct a {@link CpuRequirement} object.
      * @param numberRange number range
-     * @param selectionType selection type
+     * @param requirementType requirement type
      * @param whereCondition where condition
+     * @param capacityRequirement capacity requirement (in CFS slices)
      * @throws NullPointerException if any argument is {@code null}
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
-     * {@code NumberCheckUtils.isAtLeast1(numberRange.getStart())},
+     * {@code NumberCheckUtils.isAtLeast0(numberRange.getStart())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getStart())},
-     * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())},
-     * {@code whereCondition instanceof BooleanLiteralExpression},
-     * {@code ((BooleanLiteralExpression) whereCondition).getValue() == Boolean.TRUE}
+     * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
      */
-    public CapacitySelection(NumberRange numberRange, SelectionType selectionType, Expression whereCondition) {
-        super(numberRange, selectionType, whereCondition);
+    public CpuRequirement(NumberRange numberRange, RequirementType requirementType, Expression whereCondition,
+            CapacityRequirement capacityRequirement) {
+        super(numberRange, requirementType, whereCondition);
 
+        Validate.notNull(capacityRequirement);
+        
         isAtLeast1(numberRange.getStart());
         isNonFractional(numberRange.getStart());
         isNonFractional(numberRange.getEnd());
         
-        // Where condition must always be set to true (defaults to true if it's nonexistant in the parser)
-        Validate.isTrue(whereCondition instanceof BooleanLiteralExpression);
-        Validate.isTrue(((BooleanLiteralExpression) whereCondition).getValue() == Boolean.TRUE);
+        this.capacityRequirement = capacityRequirement;
     }
-    
+
+    @Override
+    public CapacityRequirement getCapacityRequirement() {
+        return capacityRequirement;
+    }
 }

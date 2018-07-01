@@ -14,52 +14,57 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.selection;
+package com.offbynull.rfm.host.model.requirement;
 
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast1;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.commons.collections4.list.UnmodifiableList;
+import static org.apache.commons.collections4.list.UnmodifiableList.unmodifiableList;
 import org.apache.commons.lang3.Validate;
 
 /**
- * RAM selection. Capacity is measured in bytes.
+ * CPU socket requirement.
  * @author Kasra Faghihi
  */
-public final class RamSelection extends Selection implements CapacityEnabledSelection {
+public final class SocketRequirement extends Requirement {
 
-    private final CapacitySelection capacitySelection;
+    private final UnmodifiableList<CoreRequirement> coreRequirements;
     
     /**
-     * Construct a {@link RamSelection} object.
+     * Construct a {@link SocketRequirement} object.
      * @param numberRange number range
-     * @param selectionType selection type
+     * @param requirementType requirement type
      * @param whereCondition where condition
-     * @param capacitySelection capacity selection (in bytes)
+     * @param coreRequirements CPU core requirements
      * @throws NullPointerException if any argument is {@code null}
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
+     * {@code !coreRequirements.contains(null)},
      * {@code NumberCheckUtils.isAtLeast1(numberRange.getStart())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getStart())},
-     * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
      */
-    public RamSelection(NumberRange numberRange, SelectionType selectionType, Expression whereCondition,
-            CapacitySelection capacitySelection) {
-        super(numberRange, selectionType, whereCondition);
-
-        Validate.notNull(capacitySelection);
+    public SocketRequirement(NumberRange numberRange, RequirementType requirementType, Expression whereCondition,
+            List<CoreRequirement> coreRequirements) {
+        super(numberRange, requirementType, whereCondition);
         
+        Validate.notNull(coreRequirements);
+        Validate.noNullElements(coreRequirements);
+
         isAtLeast1(numberRange.getStart());
         isNonFractional(numberRange.getStart());
         isNonFractional(numberRange.getEnd());
         
-        this.capacitySelection = capacitySelection;
+        this.coreRequirements = (UnmodifiableList<CoreRequirement>) unmodifiableList(new ArrayList<>(coreRequirements));
     }
 
     /**
-     * Get capacity selection
-     * @return capacity selection
+     * Get CPU core requirements
+     * @return CPU core requirements
      */
-    @Override
-    public CapacitySelection getCapacitySelection() {
-        return capacitySelection;
+    public UnmodifiableList<CoreRequirement> getCoreRequirements() {
+        return coreRequirements;
     }
+    
 }

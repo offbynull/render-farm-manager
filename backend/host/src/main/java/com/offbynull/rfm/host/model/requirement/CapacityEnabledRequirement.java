@@ -14,22 +14,18 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.selection;
-
-import static com.offbynull.rfm.host.model.selection.DataType.STRING;
+package com.offbynull.rfm.host.model.requirement;
 
 /**
- * String literal expression node.
+ * Capacity-enabled requirement.
  * @author Kasra Faghihi
  */
-public final class StringLiteralExpression extends LiteralExpression<String> {
+public interface CapacityEnabledRequirement {
 
     /**
-     * Create a {@link StringLiteralExpression} object.
-     * @param value value
-     * @throws NullPointerException if any argument is {@code null}
+     * Get capacity requirement
+     * @return capacity requirement
      */
-    public StringLiteralExpression(String value) {
-        super(STRING, value);
-    }
+    CapacityRequirement getCapacityRequirement();
+    
 }

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.selection;
+package com.offbynull.rfm.host.model.requirement;
 
 import com.offbynull.rfm.host.model.common.IdCheckUtils;
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ import org.apache.commons.lang3.Validate;
  * Function name and signature.
  * @author Kasra Faghihi
  */
-public final class SelectionFunction {
+public final class RequirementFunction {
     private final DataType returnType;
     private final String name;
     private final UnmodifiableList<DataType> parameters;
@@ -41,7 +41,7 @@ public final class SelectionFunction {
      * @throws NullPointerException if any argument is {@code null} or contains {@code null}
      * @throws IllegalArgumentException if name is empty or an invalid identifier
      */
-    public SelectionFunction(DataType returnType, String name, DataType... parameterTypes) {
+    public RequirementFunction(DataType returnType, String name, DataType... parameterTypes) {
         this(returnType, name, asList(parameterTypes));
     }
 
@@ -53,7 +53,7 @@ public final class SelectionFunction {
      * @throws NullPointerException if any argument is {@code null} or contains {@code null}
      * @throws IllegalArgumentException if name is empty or an invalid identifier
      */
-    public SelectionFunction(DataType returnType, String name, List<DataType> parameterTypes) {
+    public RequirementFunction(DataType returnType, String name, List<DataType> parameterTypes) {
         Validate.notNull(returnType);
         Validate.notNull(name);
         Validate.notNull(parameterTypes);

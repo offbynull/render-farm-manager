@@ -14,18 +14,33 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.selection;
+package com.offbynull.rfm.host.model.requirement;
+
+import org.apache.commons.lang3.Validate;
 
 /**
- * Capacity-enabled selection.
+ * Abstract expression node.
  * @author Kasra Faghihi
  */
-public interface CapacityEnabledSelection {
+public abstract class Expression {
+    private final DataType type;
+    
+    /**
+     * Create a {@link Expression} object.
+     * @param type type
+     * @throws NullPointerException if any argument is {@code null}
+     */
+    public Expression(DataType type) {
+        Validate.notNull(type);
+        this.type = type;
+    }
 
     /**
-     * Get capacity selection
-     * @return capacity selection
+     * Get type the evaluation of this expression will result to.
+     * @return resulting type
      */
-    CapacitySelection getCapacitySelection();
+    public DataType getType() {
+        return type;
+    }
     
 }

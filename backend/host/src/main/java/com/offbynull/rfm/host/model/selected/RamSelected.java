@@ -1,19 +1,19 @@
 package com.offbynull.rfm.host.model.selected;
 
-import com.offbynull.rfm.host.model.selection.NumberRange;
-import com.offbynull.rfm.host.model.selection.RamSelection;
+import com.offbynull.rfm.host.model.requirement.NumberRange;
+import com.offbynull.rfm.host.model.requirement.RamRequirement;
 import com.offbynull.rfm.host.model.specification.RamSpecification;
 import java.util.Set;
 import org.apache.commons.lang3.Validate;
 
-public final class RamSelected extends Selected<RamSelection, RamSpecification> {
+public final class RamSelected extends Selected<RamRequirement, RamSpecification> {
     
-    public RamSelected(RamSelection selection, Set<RamSpecification> specification) {
+    public RamSelected(RamRequirement selection, Set<RamSpecification> specification) {
         super(selection, specification);
         
         Validate.isTrue(selection.getNumberRange().isInRange(specification.size()));
         
-        NumberRange capacityRange = selection.getCapacitySelection().getNumberRange();
+        NumberRange capacityRange = selection.getCapacityRequirement().getNumberRange();
         Validate.isTrue(specification.stream().allMatch(s -> capacityRange.isInRange(s.getCapacity())));
     }
     
