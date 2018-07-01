@@ -8,12 +8,12 @@ import org.apache.commons.lang3.Validate;
 
 public final class MountSelection extends Selection<MountRequirement, MountSpecification> {
     
-    public MountSelection(MountRequirement selection, Set<MountSpecification> specification) {
-        super(selection, specification);
+    public MountSelection(MountRequirement requirement, Set<MountSpecification> specification) {
+        super(requirement, specification);
         
-        Validate.isTrue(selection.getNumberRange().isInRange(specification.size()));
+        Validate.isTrue(requirement.getNumberRange().isInRange(specification.size()));
         
-        NumberRange capacityRange = selection.getCapacityRequirement().getNumberRange();
+        NumberRange capacityRange = requirement.getCapacityRequirement().getNumberRange();
         Validate.isTrue(specification.stream().allMatch(s -> capacityRange.isInRange(s.getCapacity())));
     }
     

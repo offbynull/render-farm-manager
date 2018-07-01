@@ -10,21 +10,21 @@ import org.apache.commons.lang3.Validate;
 
 public final class CoreSelection extends Selection<CoreRequirement, CoreSpecification> {
     
-    private final UnmodifiableSet<CpuSelection> cpusSelected;
+    private final UnmodifiableSet<CpuSelection> cpusSelection;
     
-    public CoreSelection(CoreRequirement selection, Set<CoreSpecification> specification, Set<CpuSelection> cpusSelected) {
-        super(selection, specification);
+    public CoreSelection(CoreRequirement requirement, Set<CoreSpecification> specification, Set<CpuSelection> cpusSelection) {
+        super(requirement, specification);
         
-        this.cpusSelected = (UnmodifiableSet<CpuSelection>) unmodifiableSet(new HashSet<>(cpusSelected));
+        this.cpusSelection = (UnmodifiableSet<CpuSelection>) unmodifiableSet(new HashSet<>(cpusSelection));
         
-        isDistinctSpecifications(cpusSelected);
-        isDistinctSelections(cpusSelected);
+        isDistinctSpecifications(cpusSelection);
+        isDistinctSelections(cpusSelection);
         
-        Validate.isTrue(selection.getNumberRange().isInRange(specification.size()));
+        Validate.isTrue(requirement.getNumberRange().isInRange(specification.size()));
     }
 
-    public UnmodifiableSet<CpuSelection> getCpusSelected() {
-        return cpusSelected;
+    public UnmodifiableSet<CpuSelection> getCpusSelection() {
+        return cpusSelection;
     }
 
 }

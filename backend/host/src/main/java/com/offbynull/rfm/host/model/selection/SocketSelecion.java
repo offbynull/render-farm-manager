@@ -10,21 +10,21 @@ import org.apache.commons.lang3.Validate;
 
 public final class SocketSelecion extends Selection<SocketRequirement, SocketSpecification> {
     
-    private final UnmodifiableSet<CoreSelection> coresSelected;
+    private final UnmodifiableSet<CoreSelection> coresSelection;
     
-    public SocketSelecion(SocketRequirement selection, Set<SocketSpecification> specification, Set<CoreSelection> coresSelected) {
-        super(selection, specification);
+    public SocketSelecion(SocketRequirement requirement, Set<SocketSpecification> specification, Set<CoreSelection> coresSelection) {
+        super(requirement, specification);
         
-        this.coresSelected = (UnmodifiableSet<CoreSelection>) unmodifiableSet(new HashSet<>(coresSelected));
+        this.coresSelection = (UnmodifiableSet<CoreSelection>) unmodifiableSet(new HashSet<>(coresSelection));
         
-        isDistinctSpecifications(coresSelected);
-        isDistinctSelections(coresSelected);
+        isDistinctSpecifications(coresSelection);
+        isDistinctSelections(coresSelection);
         
-        Validate.isTrue(selection.getNumberRange().isInRange(specification.size()));
+        Validate.isTrue(requirement.getNumberRange().isInRange(specification.size()));
     }
 
-    public UnmodifiableSet<CoreSelection> getCoresSelected() {
-        return coresSelected;
+    public UnmodifiableSet<CoreSelection> getCoresSelection() {
+        return coresSelection;
     }
     
 }

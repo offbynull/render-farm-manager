@@ -8,12 +8,12 @@ import org.apache.commons.lang3.Validate;
 
 public final class RamSelection extends Selection<RamRequirement, RamSpecification> {
     
-    public RamSelection(RamRequirement selection, Set<RamSpecification> specification) {
-        super(selection, specification);
+    public RamSelection(RamRequirement requirement, Set<RamSpecification> specification) {
+        super(requirement, specification);
         
-        Validate.isTrue(selection.getNumberRange().isInRange(specification.size()));
+        Validate.isTrue(requirement.getNumberRange().isInRange(specification.size()));
         
-        NumberRange capacityRange = selection.getCapacityRequirement().getNumberRange();
+        NumberRange capacityRange = requirement.getCapacityRequirement().getNumberRange();
         Validate.isTrue(specification.stream().allMatch(s -> capacityRange.isInRange(s.getCapacity())));
     }
     

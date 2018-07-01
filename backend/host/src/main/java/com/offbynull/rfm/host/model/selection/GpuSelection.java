@@ -8,12 +8,12 @@ import org.apache.commons.lang3.Validate;
 
 public final class GpuSelection extends Selection<GpuRequirement, GpuSpecification> {
     
-    public GpuSelection(GpuRequirement selection, Set<GpuSpecification> specification) {
-        super(selection, specification);
+    public GpuSelection(GpuRequirement requirement, Set<GpuSpecification> specification) {
+        super(requirement, specification);
         
-        Validate.isTrue(selection.getNumberRange().isInRange(specification.size()));
+        Validate.isTrue(requirement.getNumberRange().isInRange(specification.size()));
         
-        NumberRange capacityRange = selection.getCapacityRequirement().getNumberRange();
+        NumberRange capacityRange = requirement.getCapacityRequirement().getNumberRange();
         Validate.isTrue(specification.stream().allMatch(s -> capacityRange.isInRange(s.getCapacity())));
     }
     

@@ -8,12 +8,12 @@ import org.apache.commons.lang3.Validate;
 
 public final class CpuSelection extends Selection<CpuRequirement, CpuSpecification> {
     
-    public CpuSelection(CpuRequirement selection, Set<CpuSpecification> specification) {
-        super(selection, specification);
+    public CpuSelection(CpuRequirement requirement, Set<CpuSpecification> specification) {
+        super(requirement, specification);
         
-        Validate.isTrue(selection.getNumberRange().isInRange(specification.size()));
-        
-        NumberRange capacityRange = selection.getCapacityRequirement().getNumberRange();
+        Validate.isTrue(requirement.getNumberRange().isInRange(specification.size()));
+
+        NumberRange capacityRange = requirement.getCapacityRequirement().getNumberRange();
         Validate.isTrue(specification.stream().allMatch(s -> capacityRange.isInRange(s.getCapacity())));
     }
     

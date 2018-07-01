@@ -10,48 +10,48 @@ import org.apache.commons.lang3.Validate;
 
 public final class HostSelection extends Selection<HostRequirement, HostSpecification> {
     
-    private final Set<SocketSelecion> socketsSelected;
-    private final Set<GpuSelection> gpusSelected;
-    private final Set<MountSelection> mountsSelected;
-    private final Set<RamSelection> ramsSelected;
+    private final Set<SocketSelecion> socketsSelection;
+    private final Set<GpuSelection> gpusSelection;
+    private final Set<MountSelection> mountsSelection;
+    private final Set<RamSelection> ramsSelection;
 
-    public HostSelection(HostRequirement selection, Set<HostSpecification> specification,
-            Set<SocketSelecion> socketsSelected,
-            Set<GpuSelection> gpusSelected,
-            Set<MountSelection> mountsSelected,
-            Set<RamSelection> ramsSelected) {
-        super(selection, specification);
+    public HostSelection(HostRequirement requirement, Set<HostSpecification> specification,
+            Set<SocketSelecion> socketsSelection,
+            Set<GpuSelection> gpusSelection,
+            Set<MountSelection> mountsSelection,
+            Set<RamSelection> ramsSelection) {
+        super(requirement, specification);
 
-        this.socketsSelected = (UnmodifiableSet<SocketSelecion>) unmodifiableSet(new HashSet<>(socketsSelected));
-        this.gpusSelected = (UnmodifiableSet<GpuSelection>) unmodifiableSet(new HashSet<>(gpusSelected));
-        this.mountsSelected = (UnmodifiableSet<MountSelection>) unmodifiableSet(new HashSet<>(mountsSelected));
-        this.ramsSelected = (UnmodifiableSet<RamSelection>) unmodifiableSet(new HashSet<>(ramsSelected));
+        this.socketsSelection = (UnmodifiableSet<SocketSelecion>) unmodifiableSet(new HashSet<>(socketsSelection));
+        this.gpusSelection = (UnmodifiableSet<GpuSelection>) unmodifiableSet(new HashSet<>(gpusSelection));
+        this.mountsSelection = (UnmodifiableSet<MountSelection>) unmodifiableSet(new HashSet<>(mountsSelection));
+        this.ramsSelection = (UnmodifiableSet<RamSelection>) unmodifiableSet(new HashSet<>(ramsSelection));
         
-        isDistinctSpecifications(socketsSelected);
-        isDistinctSpecifications(gpusSelected);
-        isDistinctSpecifications(mountsSelected);
-        isDistinctSpecifications(ramsSelected);
-        isDistinctSelections(socketsSelected);
-        isDistinctSelections(gpusSelected);
-        isDistinctSelections(mountsSelected);
-        isDistinctSelections(ramsSelected);
+        isDistinctSpecifications(socketsSelection);
+        isDistinctSpecifications(gpusSelection);
+        isDistinctSpecifications(mountsSelection);
+        isDistinctSpecifications(ramsSelection);
+        isDistinctSelections(socketsSelection);
+        isDistinctSelections(gpusSelection);
+        isDistinctSelections(mountsSelection);
+        isDistinctSelections(ramsSelection);
         
-        Validate.isTrue(selection.getNumberRange().isInRange(specification.size()));
+        Validate.isTrue(requirement.getNumberRange().isInRange(specification.size()));
     }
 
-    public Set<SocketSelecion> getSocketsSelected() {
-        return socketsSelected;
+    public Set<SocketSelecion> getSocketsSelection() {
+        return socketsSelection;
     }
 
-    public Set<GpuSelection> getGpusSelected() {
-        return gpusSelected;
+    public Set<GpuSelection> getGpusSelection() {
+        return gpusSelection;
     }
 
-    public Set<MountSelection> getMountsSelected() {
-        return mountsSelected;
+    public Set<MountSelection> getMountsSelection() {
+        return mountsSelection;
     }
 
-    public Set<RamSelection> getRamsSelected() {
-        return ramsSelected;
+    public Set<RamSelection> getRamsSelection() {
+        return ramsSelection;
     }
 }
