@@ -16,8 +16,8 @@
  */
 package com.offbynull.rfm.host.model.parser;
 
-import com.offbynull.rfm.host.model.requirement.RequirementFunction;
-import com.offbynull.rfm.host.model.requirement.RequirementFunctionBuiltIns;
+import com.offbynull.rfm.host.model.expression.RequirementFunction;
+import com.offbynull.rfm.host.model.expression.RequirementFunctionBuiltIns;
 import com.offbynull.rfm.host.model.work.Work;
 import com.offbynull.rfm.host.model.parser.antlr.EvalLexer;
 import com.offbynull.rfm.host.model.parser.antlr.EvalParser;

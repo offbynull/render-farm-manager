@@ -16,9 +16,9 @@
  */
 package com.offbynull.rfm.host.model.common;
 
-import static com.offbynull.rfm.host.model.requirement.DataType.BOOLEAN;
-import static com.offbynull.rfm.host.model.requirement.DataType.NUMBER;
-import static com.offbynull.rfm.host.model.requirement.DataType.STRING;
+import static com.offbynull.rfm.host.model.expression.DataType.BOOLEAN;
+import static com.offbynull.rfm.host.model.expression.DataType.NUMBER;
+import static com.offbynull.rfm.host.model.expression.DataType.STRING;
 import static java.lang.String.format;
 import java.math.BigDecimal;
 import org.apache.commons.lang3.Validate;

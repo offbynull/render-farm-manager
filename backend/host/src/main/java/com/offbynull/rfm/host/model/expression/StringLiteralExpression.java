@@ -14,33 +14,22 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.requirement;
+package com.offbynull.rfm.host.model.expression;
 
-import org.apache.commons.lang3.Validate;
+import static com.offbynull.rfm.host.model.expression.DataType.STRING;
 
 /**
- * Abstract expression node.
+ * String literal expression node.
  * @author Kasra Faghihi
  */
-public abstract class Expression {
-    private final DataType type;
-    
-    /**
-     * Create a {@link Expression} object.
-     * @param type type
-     * @throws NullPointerException if any argument is {@code null}
-     */
-    public Expression(DataType type) {
-        Validate.notNull(type);
-        this.type = type;
-    }
+public final class StringLiteralExpression extends LiteralExpression<String> {
 
     /**
-     * Get type the evaluation of this expression will result to.
-     * @return resulting type
+     * Create a {@link StringLiteralExpression} object.
+     * @param value value
+     * @throws NullPointerException if any argument is {@code null}
      */
-    public DataType getType() {
-        return type;
+    public StringLiteralExpression(String value) {
+        super(STRING, value);
     }
-    
 }

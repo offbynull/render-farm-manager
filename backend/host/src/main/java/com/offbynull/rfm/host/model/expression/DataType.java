@@ -14,23 +14,17 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.requirement;
-
-import static com.offbynull.rfm.host.model.requirement.DataType.NUMBER;
-import java.math.BigDecimal;
+package com.offbynull.rfm.host.model.expression;
 
 /**
- * Number literal expression node.
+ * Supported data types.
  * @author Kasra Faghihi
  */
-public final class NumberLiteralExpression extends LiteralExpression<BigDecimal> {
-
-    /**
-     * Create a {@link NumberLiteralExpression} object.
-     * @param value value
-     * @throws NullPointerException if any argument is {@code null}
-     */
-    public NumberLiteralExpression(BigDecimal value) {
-        super(NUMBER, value);
-    }
+public enum DataType {
+    /** Boolean type. */
+    BOOLEAN,
+    /** Number type. */
+    NUMBER,
+    /** String type. */
+    STRING
 }

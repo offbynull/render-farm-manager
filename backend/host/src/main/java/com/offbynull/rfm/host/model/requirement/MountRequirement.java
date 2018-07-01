@@ -16,6 +16,7 @@
  */
 package com.offbynull.rfm.host.model.requirement;
 
+import com.offbynull.rfm.host.model.expression.Expression;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast1;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
 import org.apache.commons.lang3.Validate;

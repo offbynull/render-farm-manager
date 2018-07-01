@@ -16,7 +16,7 @@
  */
 package com.offbynull.rfm.host.model.parser;
 
-import com.offbynull.rfm.host.model.requirement.Expression;
+import com.offbynull.rfm.host.model.expression.Expression;
 import com.offbynull.rfm.host.model.requirement.NumberRange;
 import com.offbynull.rfm.host.model.requirement.CapacityRequirement;
 import com.offbynull.rfm.host.model.requirement.CoreRequirement;

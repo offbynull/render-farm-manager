@@ -16,7 +16,8 @@
  */
 package com.offbynull.rfm.host.model.requirement;
 
-import static com.offbynull.rfm.host.model.requirement.DataType.BOOLEAN;
+import com.offbynull.rfm.host.model.expression.Expression;
+import static com.offbynull.rfm.host.model.expression.DataType.BOOLEAN;
 import org.apache.commons.lang3.Validate;
 
 /**

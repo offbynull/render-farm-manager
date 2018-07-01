@@ -1,7 +1,7 @@
 package com.offbynull.rfm.host.services.h2db;
 
 import com.offbynull.rfm.host.model.parser.Parser;
-import com.offbynull.rfm.host.model.requirement.Expression;
+import com.offbynull.rfm.host.model.expression.Expression;
 import com.offbynull.rfm.host.model.requirement.HostRequirement;
 import com.offbynull.rfm.host.model.requirement.NumberRange;
 import com.offbynull.rfm.host.model.requirement.Requirement;

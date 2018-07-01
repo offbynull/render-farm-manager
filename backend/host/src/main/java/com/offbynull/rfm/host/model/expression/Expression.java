@@ -14,17 +14,33 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.requirement;
+package com.offbynull.rfm.host.model.expression;
+
+import org.apache.commons.lang3.Validate;
 
 /**
- * Supported data types.
+ * Abstract expression node.
  * @author Kasra Faghihi
  */
-public enum DataType {
-    /** Boolean type. */
-    BOOLEAN,
-    /** Number type. */
-    NUMBER,
-    /** String type. */
-    STRING
+public abstract class Expression {
+    private final DataType type;
+    
+    /**
+     * Create a {@link Expression} object.
+     * @param type type
+     * @throws NullPointerException if any argument is {@code null}
+     */
+    public Expression(DataType type) {
+        Validate.notNull(type);
+        this.type = type;
+    }
+
+    /**
+     * Get type the evaluation of this expression will result to.
+     * @return resulting type
+     */
+    public DataType getType() {
+        return type;
+    }
+    
 }

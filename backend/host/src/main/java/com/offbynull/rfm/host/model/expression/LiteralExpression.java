@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.requirement;
+package com.offbynull.rfm.host.model.expression;
 
 import org.apache.commons.lang3.Validate;
 

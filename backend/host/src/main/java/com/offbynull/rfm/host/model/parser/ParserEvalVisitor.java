@@ -16,22 +16,22 @@
  */
 package com.offbynull.rfm.host.model.parser;
 
-import com.offbynull.rfm.host.model.requirement.RequirementFunction;
-import com.offbynull.rfm.host.model.requirement.RequirementFunctionBuiltIns;
-import com.offbynull.rfm.host.model.requirement.Expression;
-import com.offbynull.rfm.host.model.requirement.DataType;
-import com.offbynull.rfm.host.model.requirement.VariableExpression;
-import com.offbynull.rfm.host.model.requirement.BooleanLiteralExpression;
-import com.offbynull.rfm.host.model.requirement.NumberLiteralExpression;
-import com.offbynull.rfm.host.model.requirement.InvocationExpression;
-import com.offbynull.rfm.host.model.requirement.StringLiteralExpression;
+import com.offbynull.rfm.host.model.expression.RequirementFunction;
+import com.offbynull.rfm.host.model.expression.RequirementFunctionBuiltIns;
+import com.offbynull.rfm.host.model.expression.Expression;
+import com.offbynull.rfm.host.model.expression.DataType;
+import com.offbynull.rfm.host.model.expression.VariableExpression;
+import com.offbynull.rfm.host.model.expression.BooleanLiteralExpression;
+import com.offbynull.rfm.host.model.expression.NumberLiteralExpression;
+import com.offbynull.rfm.host.model.expression.InvocationExpression;
+import com.offbynull.rfm.host.model.expression.StringLiteralExpression;
 import com.offbynull.rfm.host.model.requirement.NumberRange;
 import com.offbynull.rfm.host.model.common.IdCheckUtils;
 import com.offbynull.rfm.host.model.work.Core;
 import static com.offbynull.rfm.host.model.parser.InternalUtils.getParserRuleText;
-import static com.offbynull.rfm.host.model.requirement.DataType.BOOLEAN;
-import static com.offbynull.rfm.host.model.requirement.DataType.NUMBER;
-import static com.offbynull.rfm.host.model.requirement.DataType.STRING;
+import static com.offbynull.rfm.host.model.expression.DataType.BOOLEAN;
+import static com.offbynull.rfm.host.model.expression.DataType.NUMBER;
+import static com.offbynull.rfm.host.model.expression.DataType.STRING;
 import com.offbynull.rfm.host.model.parser.antlr.EvalBaseVisitor;
 import com.offbynull.rfm.host.model.parser.antlr.EvalParser;
 import com.offbynull.rfm.host.model.parser.antlr.EvalParser.NumberRangeContext;

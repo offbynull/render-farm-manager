@@ -1,11 +1,11 @@
 package com.offbynull.rfm.host.services.h2db;
 
-import com.offbynull.rfm.host.model.requirement.Expression;
-import com.offbynull.rfm.host.model.requirement.InvocationExpression;
-import com.offbynull.rfm.host.model.requirement.LiteralExpression;
-import com.offbynull.rfm.host.model.requirement.RequirementFunction;
-import com.offbynull.rfm.host.model.requirement.RequirementFunctionBuiltIns;
-import com.offbynull.rfm.host.model.requirement.VariableExpression;
+import com.offbynull.rfm.host.model.expression.Expression;
+import com.offbynull.rfm.host.model.expression.InvocationExpression;
+import com.offbynull.rfm.host.model.expression.LiteralExpression;
+import com.offbynull.rfm.host.model.expression.RequirementFunction;
+import com.offbynull.rfm.host.model.expression.RequirementFunctionBuiltIns;
+import com.offbynull.rfm.host.model.expression.VariableExpression;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.HashSet;

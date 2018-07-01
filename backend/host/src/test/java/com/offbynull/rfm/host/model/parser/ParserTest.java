@@ -1,13 +1,13 @@
 package com.offbynull.rfm.host.model.parser;
 
-import com.offbynull.rfm.host.model.requirement.RequirementFunction;
-import com.offbynull.rfm.host.model.requirement.RequirementFunctionBuiltIns;
-import com.offbynull.rfm.host.model.requirement.DataType;
-import com.offbynull.rfm.host.model.requirement.VariableExpression;
-import com.offbynull.rfm.host.model.requirement.NumberLiteralExpression;
-import com.offbynull.rfm.host.model.requirement.BooleanLiteralExpression;
-import com.offbynull.rfm.host.model.requirement.StringLiteralExpression;
-import com.offbynull.rfm.host.model.requirement.InvocationExpression;
+import com.offbynull.rfm.host.model.expression.RequirementFunction;
+import com.offbynull.rfm.host.model.expression.RequirementFunctionBuiltIns;
+import com.offbynull.rfm.host.model.expression.DataType;
+import com.offbynull.rfm.host.model.expression.VariableExpression;
+import com.offbynull.rfm.host.model.expression.NumberLiteralExpression;
+import com.offbynull.rfm.host.model.expression.BooleanLiteralExpression;
+import com.offbynull.rfm.host.model.expression.StringLiteralExpression;
+import com.offbynull.rfm.host.model.expression.InvocationExpression;
 import com.offbynull.rfm.host.model.requirement.NumberRange;
 import com.offbynull.rfm.host.model.requirement.CapacityRequirement;
 import com.offbynull.rfm.host.model.work.Core;
