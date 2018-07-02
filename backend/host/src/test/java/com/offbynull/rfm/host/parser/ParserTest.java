@@ -1,5 +1,7 @@
-package com.offbynull.rfm.host.model.parser;
+package com.offbynull.rfm.host.parser;
 
+import com.offbynull.rfm.host.parser.TagFunction;
+import com.offbynull.rfm.host.parser.Parser;
 import com.offbynull.rfm.host.model.expression.RequirementFunction;
 import com.offbynull.rfm.host.model.expression.RequirementFunctionBuiltIns;
 import com.offbynull.rfm.host.model.expression.DataType;
@@ -10,7 +12,7 @@ import com.offbynull.rfm.host.model.expression.StringLiteralExpression;
 import com.offbynull.rfm.host.model.expression.InvocationExpression;
 import com.offbynull.rfm.host.model.requirement.NumberRange;
 import com.offbynull.rfm.host.model.requirement.CapacityRequirement;
-import com.offbynull.rfm.host.model.work.Core;
+import com.offbynull.rfm.host.service.Core;
 import com.offbynull.rfm.host.model.requirement.CoreRequirement;
 import com.offbynull.rfm.host.model.requirement.CpuRequirement;
 import com.offbynull.rfm.host.model.requirement.SocketRequirement;
@@ -20,7 +22,7 @@ import com.offbynull.rfm.host.model.requirement.HostRequirement;
 import com.offbynull.rfm.host.model.requirement.RamRequirement;
 import static com.offbynull.rfm.host.model.requirement.RequirementType.EACH;
 import static com.offbynull.rfm.host.model.requirement.RequirementType.TOTAL;
-import com.offbynull.rfm.host.model.work.Work;
+import com.offbynull.rfm.host.service.Work;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import static java.util.Arrays.asList;

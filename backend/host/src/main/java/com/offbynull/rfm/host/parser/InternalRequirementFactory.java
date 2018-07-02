@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.parser;
+package com.offbynull.rfm.host.parser;
 
 import com.offbynull.rfm.host.model.expression.Expression;
 import com.offbynull.rfm.host.model.requirement.NumberRange;

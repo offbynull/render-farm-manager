@@ -16,8 +16,8 @@
  */
 package com.offbynull.rfm.host.services.h2db;
 
-import com.offbynull.rfm.host.model.work.Work;
-import com.offbynull.rfm.host.model.worker.Worker;
+import com.offbynull.rfm.host.service.Work;
+import com.offbynull.rfm.host.service.Worker;
 import com.offbynull.rfm.host.service.Bind;
 import com.offbynull.rfm.host.service.Direction;
 import com.offbynull.rfm.host.service.HostService;

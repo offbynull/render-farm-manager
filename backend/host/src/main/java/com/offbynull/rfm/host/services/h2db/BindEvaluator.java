@@ -1,6 +1,6 @@
 package com.offbynull.rfm.host.services.h2db;
 
-import com.offbynull.rfm.host.model.parser.Parser;
+import com.offbynull.rfm.host.parser.Parser;
 import com.offbynull.rfm.host.model.expression.Expression;
 import com.offbynull.rfm.host.model.requirement.HostRequirement;
 import com.offbynull.rfm.host.model.requirement.NumberRange;
@@ -9,8 +9,8 @@ import com.offbynull.rfm.host.model.requirement.RequirementType;
 import com.offbynull.rfm.host.model.specification.CapacityEnabledSpecification;
 import com.offbynull.rfm.host.model.specification.HostSpecification;
 import com.offbynull.rfm.host.model.specification.Specification;
-import com.offbynull.rfm.host.model.work.Work;
-import com.offbynull.rfm.host.model.worker.Worker;
+import com.offbynull.rfm.host.service.Work;
+import com.offbynull.rfm.host.service.Worker;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

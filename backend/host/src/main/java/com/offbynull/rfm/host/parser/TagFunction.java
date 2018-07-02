@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.parser;
+package com.offbynull.rfm.host.parser;
 
 import com.offbynull.rfm.host.model.common.IdCheckUtils;
 import java.util.List;

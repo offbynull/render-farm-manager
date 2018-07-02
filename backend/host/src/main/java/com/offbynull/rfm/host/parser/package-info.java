@@ -20,4 +20,4 @@
  * 
  * @author Kasra Faghihi
  */
-package com.offbynull.rfm.host.model.parser;
+package com.offbynull.rfm.host.parser;

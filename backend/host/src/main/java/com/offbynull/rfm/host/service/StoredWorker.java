@@ -16,7 +16,6 @@
  */
 package com.offbynull.rfm.host.service;
 
-import com.offbynull.rfm.host.model.worker.Worker;
 import org.apache.commons.lang3.Validate;
 
 /**

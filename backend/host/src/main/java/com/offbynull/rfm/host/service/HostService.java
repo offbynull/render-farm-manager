@@ -16,8 +16,6 @@
  */
 package com.offbynull.rfm.host.service;
 
-import com.offbynull.rfm.host.model.work.Work;
-import com.offbynull.rfm.host.model.worker.Worker;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;

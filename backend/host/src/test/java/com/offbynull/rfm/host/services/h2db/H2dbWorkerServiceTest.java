@@ -1,7 +1,7 @@
 package com.offbynull.rfm.host.services.h2db;
 
 import com.offbynull.rfm.host.model.specification.HostSpecification;
-import com.offbynull.rfm.host.model.worker.Worker;
+import com.offbynull.rfm.host.service.Worker;
 import com.offbynull.rfm.host.service.StoredWorker;
 import static com.offbynull.rfm.host.testutils.TestUtils.loadSpecResource;
 import java.io.IOException;

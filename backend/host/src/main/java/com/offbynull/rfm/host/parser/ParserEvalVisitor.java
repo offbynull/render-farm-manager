@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.parser;
+package com.offbynull.rfm.host.parser;
 
 import com.offbynull.rfm.host.model.expression.RequirementFunction;
 import com.offbynull.rfm.host.model.expression.RequirementFunctionBuiltIns;
@@ -27,8 +27,7 @@ import com.offbynull.rfm.host.model.expression.InvocationExpression;
 import com.offbynull.rfm.host.model.expression.StringLiteralExpression;
 import com.offbynull.rfm.host.model.requirement.NumberRange;
 import com.offbynull.rfm.host.model.common.IdCheckUtils;
-import com.offbynull.rfm.host.model.work.Core;
-import static com.offbynull.rfm.host.model.parser.InternalUtils.getParserRuleText;
+import static com.offbynull.rfm.host.parser.InternalUtils.getParserRuleText;
 import static com.offbynull.rfm.host.model.expression.DataType.BOOLEAN;
 import static com.offbynull.rfm.host.model.expression.DataType.NUMBER;
 import static com.offbynull.rfm.host.model.expression.DataType.STRING;
@@ -40,7 +39,7 @@ import com.offbynull.rfm.host.model.requirement.HostRequirement;
 import com.offbynull.rfm.host.model.requirement.Requirement;
 import com.offbynull.rfm.host.model.requirement.RequirementType;
 import static com.offbynull.rfm.host.model.requirement.RequirementType.EACH;
-import com.offbynull.rfm.host.model.work.Work;
+import com.offbynull.rfm.host.service.Work;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -123,32 +122,14 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
         reqScope.clear();
         tagCache.clear();
 
-        Core core = (Core) visit(ctx.core());
-        
-        for (EvalParser.TagEntryContext tagCtx : ctx.tagEntry()) {
-            ImmutablePair<String, Object> val = (ImmutablePair<String, Object>) visit(tagCtx);
-            tagCache.put(val.getKey(), val.getValue());
-        }
-
-        Requirement req = (Requirement) visit(ctx.reqEntry()); // output not used, but this does do validation
-        String reqText = getParserRuleText(ctx.reqEntry());
-        parseIsTrue(ctx.reqEntry(), req instanceof HostRequirement, "Top-level requirement must be host");
-        
-        return new Work(core, new HashMap<>(tagCache), reqText);
-    }
-    
-    @Override
-    public Object visitCore(EvalParser.CoreContext ctx) {
-        evalState = ParseState.CORE;
-        
-        
-        String id = ctx.ID(0).getText();
+        // core
+        String id = ctx.core().ID(0).getText();
         isCorrectId(ctx, id);
         
-        BigDecimal priority = convertNumberToBigDecimal(ctx.NUMBER());
-        parseIsTrue(ctx, priority.compareTo(ZERO) >= 0 && priority.compareTo(ONE) <= 0, "Priority must be between 0 and 1");
+        BigDecimal priority = convertNumberToBigDecimal(ctx.core().NUMBER());
+        parseIsTrue(ctx.core(), priority.compareTo(ZERO) >= 0 && priority.compareTo(ONE) <= 0, "Priority must be between 0 and 1");
 
-        Set<String> parents = ctx.ID().stream()
+        Set<String> parents = ctx.core().ID().stream()
                 .skip(1L) // first one is the ID (so skip it), rest are dependencies
                 .map(d -> {
                     String depId = d.getText();
@@ -158,8 +139,19 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
                     return depId;
                 })
                 .collect(toSet());
+        
+        // tags
+        for (EvalParser.TagEntryContext tagCtx : ctx.tagEntry()) {
+            ImmutablePair<String, Object> val = (ImmutablePair<String, Object>) visit(tagCtx);
+            tagCache.put(val.getKey(), val.getValue());
+        }
 
-        return new Core(id, priority, parents);
+        // req
+        Requirement req = (Requirement) visit(ctx.reqEntry()); // output not used, but this does do validation
+        String reqText = getParserRuleText(ctx.reqEntry());
+        parseIsTrue(ctx.reqEntry(), req instanceof HostRequirement, "Top-level requirement must be host");
+        
+        return new Work(id, priority, parents, new HashMap<>(tagCache), reqText);
     }
     
     @Override
@@ -937,7 +929,6 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
     
     
     private static enum ParseState {
-        CORE,
         TAGS,
         REQUIREMENTS
     }

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.worker;
+package com.offbynull.rfm.host.service;
 
 import com.offbynull.rfm.host.model.specification.HostSpecification;
 import java.util.Objects;

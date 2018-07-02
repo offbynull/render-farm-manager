@@ -25,7 +25,7 @@ import com.offbynull.rfm.host.model.specification.MountSpecification;
 import com.offbynull.rfm.host.model.specification.RamSpecification;
 import com.offbynull.rfm.host.model.specification.SocketSpecification;
 import com.offbynull.rfm.host.model.specification.Specification;
-import com.offbynull.rfm.host.model.worker.Worker;
+import com.offbynull.rfm.host.service.Worker;
 import com.offbynull.rfm.host.service.Direction;
 import com.offbynull.rfm.host.service.StoredWorker;
 import java.io.IOException;

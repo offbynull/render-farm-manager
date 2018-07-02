@@ -14,11 +14,11 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.parser;
+package com.offbynull.rfm.host.parser;
 
 import com.offbynull.rfm.host.model.expression.RequirementFunction;
 import com.offbynull.rfm.host.model.expression.RequirementFunctionBuiltIns;
-import com.offbynull.rfm.host.model.work.Work;
+import com.offbynull.rfm.host.service.Work;
 import com.offbynull.rfm.host.model.parser.antlr.EvalLexer;
 import com.offbynull.rfm.host.model.parser.antlr.EvalParser;
 import static com.offbynull.rfm.host.model.parser.antlr.EvalParser.VOCABULARY;

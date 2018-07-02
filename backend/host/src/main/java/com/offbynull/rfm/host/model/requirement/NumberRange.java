@@ -17,14 +17,15 @@
 package com.offbynull.rfm.host.model.requirement;
 
 import java.math.BigDecimal;
-import static java.math.BigDecimal.ONE;
+import static java.math.BigDecimal.ZERO;
+import java.util.List;
 import org.apache.commons.lang3.Validate;
 
 public final class NumberRange {
     /**
-     * A number range of [1,1].
+     * A number range of [0,0].
      */
-    public static final NumberRange SINGLE = new NumberRange(ONE, ONE);
+    public static final NumberRange NONE = new NumberRange(ZERO, ZERO);
     
     private final BigDecimal start;
     private final BigDecimal end;
@@ -61,5 +62,35 @@ public final class NumberRange {
     public boolean isInRange(BigDecimal bd) {
         Validate.notNull(bd);
         return bd.compareTo(start) >= 0 && bd.compareTo(end) <= 0;
+    }
+    
+    public static NumberRange of(long value) {
+        return new NumberRange(BigDecimal.valueOf(value), BigDecimal.valueOf(value));
+    }
+    
+    public static NumberRange of(long start, long end) {
+        return new NumberRange(BigDecimal.valueOf(start), BigDecimal.valueOf(end));
+    }
+    
+    public static NumberRange combineNumberRanges(NumberRange one, NumberRange two) {
+        Validate.notNull(one);
+        Validate.notNull(two);
+        
+        return combineNumberRanges(List.of(one, two));
+    }
+
+    public static NumberRange combineNumberRanges(List<NumberRange> numberRanges) {
+        Validate.notNull(numberRanges);
+        Validate.noNullElements(numberRanges);
+        
+        BigDecimal start = ZERO;
+        BigDecimal end = ZERO;
+        
+        for (NumberRange numberRange : numberRanges) {
+            start = start.add(numberRange.getStart());
+            end = end.add(numberRange.getEnd());
+        }
+        
+        return new NumberRange(start, end);
     }
 }

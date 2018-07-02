@@ -14,9 +14,9 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.model.parser;
+package com.offbynull.rfm.host.parser;
 
-import static com.offbynull.rfm.host.model.parser.InternalUtils.getParserRuleText;
+import static com.offbynull.rfm.host.parser.InternalUtils.getParserRuleText;
 import static java.lang.String.format;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
