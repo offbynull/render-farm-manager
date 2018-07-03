@@ -50,17 +50,6 @@ final class InternalRequirementFactory {
                 asList(ramRequirements),
                 asList(mountRequirements));
     }
-    
-    public static HostRequirement hosts(
-            NumberRange numberRange,
-            RequirementType selectionType,
-            Expression whereCondition,
-            SocketRequirement[] socketRequirements,
-            GpuRequirement[] gpuRequirements,
-            RamRequirement[] ramRequirements,
-            MountRequirement[] mountRequirements) {
-        return host(numberRange, selectionType, whereCondition, socketRequirements, gpuRequirements, ramRequirements, mountRequirements);
-    }
 
     public static SocketRequirement socket(
             NumberRange numberRange,
@@ -71,14 +60,6 @@ final class InternalRequirementFactory {
                 asList(coreRequirements));
     }
 
-    public static SocketRequirement sockets(
-            NumberRange numberRange,
-            RequirementType selectionType,
-            Expression whereCondition,
-            CoreRequirement[] coreRequirements) {
-        return socket(numberRange, selectionType, whereCondition, coreRequirements);
-    }
-
     public static CoreRequirement core(
             NumberRange numberRange,
             RequirementType selectionType,
@@ -86,14 +67,6 @@ final class InternalRequirementFactory {
             CpuRequirement[] cpuRequirements) {
         return new CoreRequirement(numberRange, selectionType, whereCondition,
                 asList(cpuRequirements));
-    }
-
-    public static CoreRequirement cores(
-            NumberRange numberRange,
-            RequirementType selectionType,
-            Expression whereCondition,
-            CpuRequirement[] cpuRequirements) {
-        return core(numberRange, selectionType, whereCondition, cpuRequirements);
     }
 
     public static CpuRequirement cpu(
@@ -107,14 +80,6 @@ final class InternalRequirementFactory {
                 capacityRequirements[0]);
     }
 
-    public static CpuRequirement cpus(
-            NumberRange numberRange,
-            RequirementType selectionType,
-            Expression whereCondition,
-            CapacityRequirement[] capacityRequirements) {
-        return cpu(numberRange, selectionType, whereCondition, capacityRequirements);
-    }
-
     public static GpuRequirement gpu(
             NumberRange numberRange,
             RequirementType selectionType,
@@ -125,14 +90,6 @@ final class InternalRequirementFactory {
         
         return new GpuRequirement(numberRange, selectionType, whereCondition,
                 capacityRequirements[0]);
-    }
-
-    public static GpuRequirement gpus(
-            NumberRange numberRange,
-            RequirementType selectionType,
-            Expression whereCondition,
-            CapacityRequirement[] capacityRequirements) {
-        return gpu(numberRange, selectionType, whereCondition, capacityRequirements);
     }
 
     public static RamRequirement ram(
@@ -157,14 +114,6 @@ final class InternalRequirementFactory {
         
         return new MountRequirement(numberRange, selectionType, whereCondition,
                 capacityRequirements[0]);
-    }
-
-    public static MountRequirement mounts(
-            NumberRange numberRange,
-            RequirementType selectionType,
-            Expression whereCondition,
-            CapacityRequirement[] capacityRequirements) {
-        return mount(numberRange, selectionType, whereCondition, capacityRequirements);
     }
     
     public static CapacityRequirement capacity(

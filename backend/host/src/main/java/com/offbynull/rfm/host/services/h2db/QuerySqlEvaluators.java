@@ -9,6 +9,7 @@ import com.offbynull.rfm.host.model.expression.VariableExpression;
 import com.offbynull.rfm.host.parser.Parser;
 import com.offbynull.rfm.host.model.requirement.HostRequirement;
 import com.offbynull.rfm.host.model.requirement.NumberRange;
+import com.offbynull.rfm.host.model.requirement.Requirement;
 import com.offbynull.rfm.host.model.specification.HostSpecification;
 import com.offbynull.rfm.host.model.specification.RamSpecification;
 import static com.offbynull.rfm.host.services.h2db.QuerySqlPrimitives.selectFlattenedProperties;
@@ -18,10 +19,15 @@ import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.EMPTY_MAP;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
+import static org.apache.commons.lang3.StringUtils.removeEnd;
+import static org.apache.commons.lang3.StringUtils.uncapitalize;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.reflect.MethodUtils;
 
 final class QuerySqlEvaluators {
     private QuerySqlEvaluators() {
@@ -32,9 +38,9 @@ final class QuerySqlEvaluators {
         Parser parser = new Parser(EMPTY_LIST, EMPTY_LIST);
         HostRequirement hr = parser.parseScriptReqs(EMPTY_MAP, ""
                 + "[1,5] host {"
-                + "  1 socket {"
-                + "    2 cores {"
-                + "      [2,999999] cpus {"
+                + "  1 socket where socket.s_brand==\"intel\" {"
+                + "    2 core where !core.b_hyperthread {"
+                + "      [2,999999] cpu where cpu.b_avx==true && socket.s_model==\"xeon\" {"
                 + "        100000 capacity"
                 + "      }"
                 + "    }"
@@ -42,7 +48,7 @@ final class QuerySqlEvaluators {
                 + "  1 gpu {"
                 + "    available"
                 + "  }"
-                + "  [1,2] mounts {"
+                + "  [1,2] mount {"
                 + "    256gb capacity"
                 + "  }"
                 + "  ram where ram.n_speed>=3000 && ram.s_brand==\"samsung\" {"
@@ -59,10 +65,132 @@ final class QuerySqlEvaluators {
 //        QueryTracker st = new QueryTracker();
 //        String query = selectFlattenedProperties(st, "host", List.of("s_host", "n_port"), List.of("b_active", "s_region", "n_class"));
 
+//        QueryTracker qt = new QueryTracker();
+//        String query = selectRamRequirement(qt, hr.getRamRequirements().get(0).getWhereCondition());
+
+//        QueryTracker qt = new QueryTracker();
+//        String query = selectRequirement(qt, List.of(hr, hr.getRamRequirements().get(0)));
+
         QueryTracker qt = new QueryTracker();
-        String query = selectRamRequirement(qt, hr.getRamRequirements().get(0).getWhereCondition());
+        String query = selectRequirement(qt,
+                List.of(
+                        hr,
+                        hr.getSocketRequirements().get(0),
+                        hr.getSocketRequirements().get(0).getCoreRequirements().get(0),
+                        hr.getSocketRequirements().get(0).getCoreRequirements().get(0).getCpuRequirements().get(0)
+                )
+        );
         
         System.out.println(query);
+    }
+    
+    private static String selectRequirement(QueryTracker qt, List<Requirement> requirementChain) {
+        qt.enter();
+        try {
+            
+            
+            Requirement finalRequirement = requirementChain.get(requirementChain.size() - 1);
+            Expression finalWhere = finalRequirement.getWhereCondition();
+            
+            
+            Set<String> id1SelectFields = new LinkedHashSet<>();
+            
+            Set<String> id2SelectFields = new LinkedHashSet<>();
+            
+            Set<String> lastDbKeys = null;
+            String lastId = null;
+            String joinChain = "";
+            
+            qt.enter();
+            try {
+                for (Requirement requirement : requirementChain) {
+                    String className = requirement.getClass().getSimpleName();
+                    String reqName = uncapitalize(removeEnd(className, "Requirement"));
+
+                    Set<String> keys = getKeys(requirement);
+                    Set<String> props = new HashSet<>();
+
+                    Set<String> dbKeys = getDbKey(requirementChain, requirement);
+                    
+                    collectVariableNames(finalWhere, reqName, props);
+
+                    String id = qt.next();
+                    String qr = selectFlattenedProperties(qt, reqName, dbKeys, props);
+
+                    keys.stream().map(f -> id + "." + f + " AS " + reqName + "_" + f).forEachOrdered(id1SelectFields::add);
+                    props.stream().map(f -> id + "." + f + " AS " + reqName + "_" + f).forEachOrdered(id1SelectFields::add);
+                    
+                    keys.stream().map(f -> reqName + "_" + f).forEachOrdered(id2SelectFields::add);
+
+                    if (lastId == null) {
+                        joinChain += ""
+                                + "(\n"
+                                + qt.identLines(1, qr)
+                                + "\n) " + id + "\n";
+                    } else {
+                        final String _lastId = lastId; // must be assigned to new final var becuase of use in lambda
+                        joinChain += ""
+                                + "RIGHT JOIN\n"
+                                + "(\n"
+                                + qt.identLines(1, qr)
+                                + "\n) " + id + "\n"
+                                + "ON " + lastDbKeys.stream().map(k -> _lastId + "." + k + "=" + id + "." + k).collect(joining(" AND "))
+                                + "\n";
+                    }
+
+                    lastId = id;
+                    lastDbKeys = dbKeys;
+               }
+            } finally {
+                qt.exit();
+            }
+            
+            String id1 = qt.next();
+            String qr1 = ""
+                    + "SELECT "
+                    + id1SelectFields.stream().collect(joining(",")) + "\n"
+                    + "FROM\n"
+                    + joinChain;
+
+            id2SelectFields = id2SelectFields.stream().map(f -> id1 + "." + f).collect(toSet());
+            String id2 = qt.next();
+            String qr2 = ""
+                    + "SELECT "
+                    + id2SelectFields.stream().collect(joining(",")) + "," + expressionize(finalWhere, qt, id1, EMPTY_MAP) + " AS expr\n"
+                    + "FROM\n"
+                    + "(\n"
+                    + qt.identLines(1, qr1)
+                    + "\n) " + id1;
+            
+            return qr2;
+        } finally {
+            qt.exit();
+        }
+    }
+    
+    private static Set<String> getDbKey(List<Requirement> requirementChain, Requirement requirement) {
+        requirementChain = requirementChain.subList(0, requirementChain.indexOf(requirement)+1);
+        LinkedHashSet<String> ret = new LinkedHashSet<>();
+        
+        for (Requirement req : requirementChain) {
+            Set<String> key = getKeys(req);
+            ret.addAll(key);
+        }
+        
+        return ret;
+    }
+    
+    private static Set<String> getKeys(Requirement requirement) {
+        String className = requirement.getClass().getSimpleName();
+        String name = removeEnd(className, "Requirement");
+
+        String specClassStr = "com.offbynull.rfm.host.model.specification." + name + "Specification";
+        try {
+            Class<?> specClass = requirement.getClass().getClassLoader().loadClass(specClassStr);
+            return (Set<String>) MethodUtils.invokeStaticMethod(specClass, "getKeyPropertyNames");
+        } catch (ReflectiveOperationException roe) {
+            throw new IllegalStateException(roe);
+        }
     }
     
     private static String selectRamRequirement(QueryTracker qt, Expression ramWhere) {

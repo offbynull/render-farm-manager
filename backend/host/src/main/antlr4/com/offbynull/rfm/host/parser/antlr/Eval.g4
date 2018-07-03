@@ -48,7 +48,7 @@ expr:
         | NUMBER                                                                      # ExprNumber
         | STRING                                                                      # ExprString
         | ID '(' (expr ',')* expr? ')'                                                # ExprFunction
-        | (ID '.')* ID                                                                # ExprVariable
+        | (ID '.')? ID                                                                # ExprVariable
         ;
 
 
