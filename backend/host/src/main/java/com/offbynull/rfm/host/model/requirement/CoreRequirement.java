@@ -36,7 +36,6 @@ public final class CoreRequirement extends Requirement {
     /**
      * Construct a {@link CoreRequirement} object.
      * @param numberRange number range
-     * @param requirementType requirement type
      * @param whereCondition where condition
      * @param cpuRequirements CPU requirements
      * @throws NullPointerException if any argument is {@code null}
@@ -46,9 +45,9 @@ public final class CoreRequirement extends Requirement {
      * {@code NumberCheckUtils.isNonFractional(numberRange.getStart())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
      */
-    public CoreRequirement(NumberRange numberRange, RequirementType requirementType, Expression whereCondition,
+    public CoreRequirement(NumberRange numberRange, Expression whereCondition,
             List<CpuRequirement> cpuRequirements) {
-        super(numberRange, requirementType, whereCondition);
+        super(numberRange, whereCondition);
         
         Validate.notNull(cpuRequirements);
         Validate.noNullElements(cpuRequirements);

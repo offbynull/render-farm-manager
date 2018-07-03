@@ -31,14 +31,11 @@ import static com.offbynull.rfm.host.parser.InternalUtils.getParserRuleText;
 import static com.offbynull.rfm.host.model.expression.DataType.BOOLEAN;
 import static com.offbynull.rfm.host.model.expression.DataType.NUMBER;
 import static com.offbynull.rfm.host.model.expression.DataType.STRING;
-import com.offbynull.rfm.host.model.parser.antlr.EvalBaseVisitor;
-import com.offbynull.rfm.host.model.parser.antlr.EvalParser;
-import com.offbynull.rfm.host.model.parser.antlr.EvalParser.NumberRangeContext;
-import com.offbynull.rfm.host.model.parser.antlr.EvalParser.SelectionTypeContext;
+import com.offbynull.rfm.host.parser.antlr.EvalBaseVisitor;
+import com.offbynull.rfm.host.parser.antlr.EvalParser;
+import com.offbynull.rfm.host.parser.antlr.EvalParser.NumberRangeContext;
 import com.offbynull.rfm.host.model.requirement.HostRequirement;
 import com.offbynull.rfm.host.model.requirement.Requirement;
-import com.offbynull.rfm.host.model.requirement.RequirementType;
-import static com.offbynull.rfm.host.model.requirement.RequirementType.EACH;
 import com.offbynull.rfm.host.service.Work;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -63,7 +60,6 @@ import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import java.util.Collections;
 import java.util.LinkedList;
-import static java.util.Locale.ENGLISH;
 import java.util.Set;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toSet;
@@ -198,18 +194,6 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
         
         
         
-        // Get selection type
-        SelectionTypeContext selectionTypeCtx = ctx.selectionType();
-        RequirementType selectionType;
-        if (selectionTypeCtx != null) {
-            String val = selectionTypeCtx.getText().toUpperCase(ENGLISH);
-            selectionType = RequirementType.valueOf(val);
-        } else {
-            selectionType = EACH;
-        }
-        
-        
-        
         // Evaluate where clause
         Expression expr;
         if (ctx.whereClause() != null) {
@@ -225,10 +209,9 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
         Method method = stream(InternalRequirementFactory.class.getMethods())
                 .filter(m -> m.getName().equals(name))                                  // match name
                 .filter(m -> Requirement.class.isAssignableFrom(m.getReturnType()))     // match ret type
-                .filter(m -> m.getParameterCount() >= 3)                                // must have >= 2 params
+                .filter(m -> m.getParameterCount() >= 2)                                // must have >= 2 params
                 .filter(m -> m.getParameterTypes()[0] == NumberRange.class)             // param[0] must be numberrange
-                .filter(m -> m.getParameterTypes()[1] == RequirementType.class)           // param[1] must be selectiontype
-                .filter(m -> m.getParameterTypes()[2] == Expression.class)              // param[1] must be expression
+                .filter(m -> m.getParameterTypes()[1] == Expression.class)              // param[1] must be expression
                 .filter(m -> (m.getModifiers() & Modifier.STATIC) != 0)                 // must be static
                 .findAny().orElseThrow(() -> new ParserEvalException(ctx, "Unrecognized requirement type: %s", name));
         
@@ -246,11 +229,9 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
         
         LinkedList<Class<?>> expectedReqTypes = new LinkedList<>(asList(paramTypes));
         expectedReqTypes.removeFirst(); // remove numberrange param (not a requirement)
-        expectedReqTypes.removeFirst(); // remove selection type param (not a requirement)
         expectedReqTypes.removeFirst(); // remove expression param (not a requirement)
         
         invokeArgs.add(numRange);      // place in number range
-        invokeArgs.add(selectionType); // place in selection type
         invokeArgs.add(expr);          // place in where expression
         expectedReqTypes.stream()
                 .map(c -> c.getComponentType()) // req args for factory method are always arrays, so get the component type of that array

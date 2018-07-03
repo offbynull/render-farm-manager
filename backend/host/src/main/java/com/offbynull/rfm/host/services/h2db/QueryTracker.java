@@ -59,11 +59,11 @@ final class QueryTracker {
         }
     }
 
-    public String identLines(String str) {
-        return identLines(0, str);
+    public String indentLines(String str) {
+        return indentLines(0, str);
     }
 
-    public String identLines(int extra, String str) {
+    public String indentLines(int extra, String str) {
         Validate.validState(tracker != null);
         String[] lines = str.split("\r?\n");
         return stream(lines).map(x -> repeat(' ', (tracker.size() + extra) * 2) + x).collect(joining("\n"));

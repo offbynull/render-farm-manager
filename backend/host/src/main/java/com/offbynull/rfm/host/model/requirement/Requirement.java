@@ -26,18 +26,15 @@ import org.apache.commons.lang3.Validate;
  */
 public abstract class Requirement {
     private final NumberRange numberRange;
-    private final RequirementType requirementType;
     private final Expression whereCondition;
 
-    Requirement(NumberRange numberRange, RequirementType requirementType, Expression whereCondition) {
+    Requirement(NumberRange numberRange, Expression whereCondition) {
         Validate.notNull(numberRange);
-        Validate.notNull(requirementType);
         Validate.notNull(whereCondition);
 
         Validate.isTrue(BOOLEAN == whereCondition.getType());
 
         this.numberRange = numberRange;
-        this.requirementType = requirementType;
         this.whereCondition = whereCondition;
     }
 
@@ -47,14 +44,6 @@ public abstract class Requirement {
      */
     public NumberRange getNumberRange() {
         return numberRange;
-    }
-
-    /**
-     * Get requirement type.
-     * @return requirement type
-     */
-    public RequirementType getRequirementType() {
-        return requirementType;
     }
     
     /**

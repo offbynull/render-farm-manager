@@ -39,7 +39,6 @@ public final class HostRequirement extends Requirement {
     /**
      * Construct a {@link HostRequirement} object.
      * @param numberRange number range
-     * @param requirementType requirement type
      * @param whereCondition where condition
      * @param socketRequirements CPU socket requirements
      * @param gpuRequirements GPU requirements
@@ -55,12 +54,12 @@ public final class HostRequirement extends Requirement {
      * {@code NumberCheckUtils.isNonFractional(numberRange.getStart())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
      */
-    public HostRequirement(NumberRange numberRange, RequirementType requirementType, Expression whereCondition,
+    public HostRequirement(NumberRange numberRange, Expression whereCondition,
             List<SocketRequirement> socketRequirements,
             List<GpuRequirement> gpuRequirements,
             List<RamRequirement> ramRequirements,
             List<MountRequirement> mountRequirements) {
-        super(numberRange, requirementType, whereCondition);
+        super(numberRange, whereCondition);
         
         Validate.notNull(socketRequirements);
         Validate.notNull(gpuRequirements);

@@ -71,7 +71,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <configuration>
-                    <exclude>**/com/offbynull/rfm/host/model/parser/antlr/*</exclude>
+                    <exclude>**/com/offbynull/rfm/model/parser/antlr/*</exclude>
                 </configuration>
             </plugin>
             <plugin>
@@ -79,7 +79,7 @@
                 <artifactId>maven-pmd-plugin</artifactId>
                 <configuration>
                     <excludes>
-                        <exclude>**/com/offbynull/rfm/host/model/parser/antlr/*</exclude>
+                        <exclude>**/com/offbynull/rfm/host/parser/antlr/*</exclude>
                     </excludes>
                 </configuration>
             </plugin>-->

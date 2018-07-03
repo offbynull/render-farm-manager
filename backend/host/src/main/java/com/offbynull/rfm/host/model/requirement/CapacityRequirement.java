@@ -31,7 +31,6 @@ public final class CapacityRequirement extends Requirement {
     /**
      * Construct a {@link CapacityRequirement} object.
      * @param numberRange number range
-     * @param requirementType requirement type
      * @param whereCondition where condition
      * @throws NullPointerException if any argument is {@code null}
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
@@ -41,8 +40,8 @@ public final class CapacityRequirement extends Requirement {
      * {@code whereCondition instanceof BooleanLiteralExpression},
      * {@code ((BooleanLiteralExpression) whereCondition).getValue() == Boolean.TRUE}
      */
-    public CapacityRequirement(NumberRange numberRange, RequirementType requirementType, Expression whereCondition) {
-        super(numberRange, requirementType, whereCondition);
+    public CapacityRequirement(NumberRange numberRange, Expression whereCondition) {
+        super(numberRange, whereCondition);
 
         isAtLeast1(numberRange.getStart());
         isNonFractional(numberRange.getStart());

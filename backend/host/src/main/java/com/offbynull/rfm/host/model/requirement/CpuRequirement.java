@@ -32,7 +32,6 @@ public final class CpuRequirement extends Requirement implements CapacityEnabled
     /**
      * Construct a {@link CpuRequirement} object.
      * @param numberRange number range
-     * @param requirementType requirement type
      * @param whereCondition where condition
      * @param capacityRequirement capacity requirement (in CFS slices)
      * @throws NullPointerException if any argument is {@code null}
@@ -41,9 +40,9 @@ public final class CpuRequirement extends Requirement implements CapacityEnabled
      * {@code NumberCheckUtils.isNonFractional(numberRange.getStart())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
      */
-    public CpuRequirement(NumberRange numberRange, RequirementType requirementType, Expression whereCondition,
+    public CpuRequirement(NumberRange numberRange, Expression whereCondition,
             CapacityRequirement capacityRequirement) {
-        super(numberRange, requirementType, whereCondition);
+        super(numberRange, whereCondition);
 
         Validate.notNull(capacityRequirement);
         

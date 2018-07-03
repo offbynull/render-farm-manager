@@ -32,7 +32,6 @@ public final class RamRequirement extends Requirement implements CapacityEnabled
     /**
      * Construct a {@link RamRequirement} object.
      * @param numberRange number range
-     * @param requirementType requirement type
      * @param whereCondition where condition
      * @param capacityRequirement requirement selection (in bytes)
      * @throws NullPointerException if any argument is {@code null}
@@ -42,9 +41,9 @@ public final class RamRequirement extends Requirement implements CapacityEnabled
      * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
      */
-    public RamRequirement(NumberRange numberRange, RequirementType requirementType, Expression whereCondition,
+    public RamRequirement(NumberRange numberRange, Expression whereCondition,
             CapacityRequirement capacityRequirement) {
-        super(numberRange, requirementType, whereCondition);
+        super(numberRange, whereCondition);
 
         Validate.notNull(capacityRequirement);
         

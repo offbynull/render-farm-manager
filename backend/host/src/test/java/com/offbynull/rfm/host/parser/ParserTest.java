@@ -1,7 +1,5 @@
 package com.offbynull.rfm.host.parser;
 
-import com.offbynull.rfm.host.parser.TagFunction;
-import com.offbynull.rfm.host.parser.Parser;
 import com.offbynull.rfm.host.model.expression.RequirementFunction;
 import com.offbynull.rfm.host.model.expression.RequirementFunctionBuiltIns;
 import com.offbynull.rfm.host.model.expression.DataType;
@@ -12,7 +10,6 @@ import com.offbynull.rfm.host.model.expression.StringLiteralExpression;
 import com.offbynull.rfm.host.model.expression.InvocationExpression;
 import com.offbynull.rfm.host.model.requirement.NumberRange;
 import com.offbynull.rfm.host.model.requirement.CapacityRequirement;
-import com.offbynull.rfm.host.service.Core;
 import com.offbynull.rfm.host.model.requirement.CoreRequirement;
 import com.offbynull.rfm.host.model.requirement.CpuRequirement;
 import com.offbynull.rfm.host.model.requirement.SocketRequirement;
@@ -20,8 +17,6 @@ import com.offbynull.rfm.host.model.requirement.MountRequirement;
 import com.offbynull.rfm.host.model.requirement.GpuRequirement;
 import com.offbynull.rfm.host.model.requirement.HostRequirement;
 import com.offbynull.rfm.host.model.requirement.RamRequirement;
-import static com.offbynull.rfm.host.model.requirement.RequirementType.EACH;
-import static com.offbynull.rfm.host.model.requirement.RequirementType.TOTAL;
 import com.offbynull.rfm.host.service.Work;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -96,7 +91,7 @@ public class ParserTest {
                        // under host (instead of under socket), the system won't nessecarily give you cores from the same socket.
                 + "    [3,40] sockets where socket.s_vendor==\"intel\" && socket.s_family==\"xeon\" {\n"
                 + "        [1,9999] core where core.n_siblings>=2 {\n"
-                + "            2 cpus each {\n"
+                + "            2 cpus {\n"
                 + "                100000 capacity\n"
                 + "            }\n"
                 + "        }\n"
@@ -111,10 +106,9 @@ public class ParserTest {
                 + "    }\n"
                 + "}");
 
-        Core core = work.getCore();
-        assertEquals("id", core.getId());
-        assertEquals("0.5", core.getPriority().toPlainString());
-        assertEquals(new HashSet<>(asList("dep_id1", "dep_id2", "dep_id3")), core.getParents());
+        assertEquals("id", work.getId());
+        assertEquals("0.5", work.getPriority().toPlainString());
+        assertEquals(new HashSet<>(asList("dep_id1", "dep_id2", "dep_id3")), work.getParents());
         
         Map<String, Object> tags = work.getTags();
         assertEquals(false, tags.get("b_tag_test1"));
@@ -244,7 +238,7 @@ public class ParserTest {
                 + "    1 mount { 10gb capacity }\n"
                 + "}");
 
-        assertTrue(work.getCore().getParents().isEmpty());
+        assertTrue(work.getParents().isEmpty());
     }
 
     @Test
@@ -340,151 +334,6 @@ public class ParserTest {
         assertRange(100000, 100000, sliceReq.getNumberRange());
     }
     
-    @Test
-    public void mustParseCpuSocketTotalCapacity() throws Exception {
-        Work work = fixture.parseScript(""
-                + "id\n"
-                + "0.5\n"
-                + "\n"
-                + "[1,20] host {\n"
-                + "    [1,9999] socket {\n"
-                + "        [1,9999] core{\n"
-                + "            [1,9999] cpu { [100000,999900000] capacity total }\n"
-                + "        }\n"
-                + "    }\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
-                + "}");
-        HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
-        
-        assertEquals(1,  hostReq.getSocketRequirements().size());
-        SocketRequirement socketReq = hostReq.getSocketRequirements().get(0);
-        assertRange(1, 9999, socketReq.getNumberRange());
-        assertEquals(EACH, socketReq.getRequirementType());
-
-        assertEquals(1, socketReq.getCoreRequirements().size());
-        CoreRequirement coreReq = socketReq.getCoreRequirements().get(0);
-        assertRange(1, 9999, coreReq.getNumberRange());
-        assertEquals(EACH, coreReq.getRequirementType());
-
-        assertEquals(1, coreReq.getCpuRequirements().size());
-        CpuRequirement cpuReq = coreReq.getCpuRequirements().get(0);
-        assertRange(1, 9999, cpuReq.getNumberRange());
-        assertEquals(EACH, cpuReq.getRequirementType());
-
-        CapacityRequirement sliceReq = cpuReq.getCapacityRequirement();
-        assertRange(100000, 999900000, sliceReq.getNumberRange());
-        assertEquals(TOTAL, sliceReq.getRequirementType());
-    }
-    
-    @Test
-    public void mustParseCpuSocketTotalCpus() throws Exception {
-        Work work = fixture.parseScript(""
-                + "id\n"
-                + "0.5\n"
-                + "\n"
-                + "[1,20] host {\n"
-                + "    [1,9999] socket {\n"
-                + "        [1,9999] core{\n"
-                + "            4 cpus total { 100000 capacity }\n"
-                + "        }\n"
-                + "    }\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
-                + "}");
-        HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
-        
-        assertEquals(1,  hostReq.getSocketRequirements().size());
-        SocketRequirement socketReq = hostReq.getSocketRequirements().get(0);
-        assertRange(1, 9999, socketReq.getNumberRange());
-        assertEquals(EACH, socketReq.getRequirementType());
-
-        assertEquals(1, socketReq.getCoreRequirements().size());
-        CoreRequirement coreReq = socketReq.getCoreRequirements().get(0);
-        assertRange(1, 9999, coreReq.getNumberRange());
-        assertEquals(EACH, coreReq.getRequirementType());
-
-        assertEquals(1, coreReq.getCpuRequirements().size());
-        CpuRequirement cpuReq = coreReq.getCpuRequirements().get(0);
-        assertRange(4, 4, cpuReq.getNumberRange());
-        assertEquals(TOTAL, cpuReq.getRequirementType());
-
-        CapacityRequirement sliceReq = cpuReq.getCapacityRequirement();
-        assertRange(100000, 100000, sliceReq.getNumberRange());
-    }
-    
-    @Test
-    public void mustParseCpuSocketTotalCores() throws Exception {
-        Work work = fixture.parseScript(""
-                + "id\n"
-                + "0.5\n"
-                + "\n"
-                + "[1,20] host {\n"
-                + "    [1,9999] socket {\n"
-                + "        4 cores total {\n"
-                + "            [1,9999] cpus { 100000 capacity }\n"
-                + "        }\n"
-                + "    }\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
-                + "}");
-        HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
-        
-        assertEquals(1,  hostReq.getSocketRequirements().size());
-        SocketRequirement socketReq = hostReq.getSocketRequirements().get(0);
-        assertRange(1, 9999, socketReq.getNumberRange());
-        assertEquals(EACH, socketReq.getRequirementType());
-
-        assertEquals(1, socketReq.getCoreRequirements().size());
-        CoreRequirement coreReq = socketReq.getCoreRequirements().get(0);
-        assertRange(4, 4, coreReq.getNumberRange());
-        assertEquals(TOTAL, coreReq.getRequirementType());
-
-        assertEquals(1, coreReq.getCpuRequirements().size());
-        CpuRequirement cpuReq = coreReq.getCpuRequirements().get(0);
-        assertRange(1, 9999, cpuReq.getNumberRange());
-        assertEquals(EACH, cpuReq.getRequirementType());
-
-        CapacityRequirement sliceReq = cpuReq.getCapacityRequirement();
-        assertRange(100000, 100000, sliceReq.getNumberRange());
-    }
-    
-    @Test
-    public void mustParseCpuSocketTotalSockets() throws Exception {
-        Work work = fixture.parseScript(""
-                + "id\n"
-                + "0.5\n"
-                + "\n"
-                + "[1,20] host {\n"
-                + "    4 sockets total {\n"
-                + "        [1,9999] cores {\n"
-                + "            [1,9999] cpus { 100000 capacity }\n"
-                + "        }\n"
-                + "    }\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
-                + "}");
-        HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
-        
-        assertEquals(1,  hostReq.getSocketRequirements().size());
-        SocketRequirement socketReq = hostReq.getSocketRequirements().get(0);
-        assertRange(4, 4, socketReq.getNumberRange());
-        assertEquals(TOTAL, socketReq.getRequirementType());
-
-        assertEquals(1, socketReq.getCoreRequirements().size());
-        CoreRequirement coreReq = socketReq.getCoreRequirements().get(0);
-        assertRange(1, 9999, coreReq.getNumberRange());
-        assertEquals(EACH, coreReq.getRequirementType());
-
-        assertEquals(1, coreReq.getCpuRequirements().size());
-        CpuRequirement cpuReq = coreReq.getCpuRequirements().get(0);
-        assertRange(1, 9999, cpuReq.getNumberRange());
-        assertEquals(EACH, cpuReq.getRequirementType());
-
-        CapacityRequirement sliceReq = cpuReq.getCapacityRequirement();
-        assertRange(100000, 100000, sliceReq.getNumberRange());
-    }
-    
     
     
     
@@ -512,11 +361,9 @@ public class ParserTest {
         assertEquals(1, hostReq.getMountRequirements().size());
         MountRequirement mountReq = hostReq.getMountRequirements().get(0);
         assertRange(2, 2, mountReq.getNumberRange());
-        assertEquals(EACH, mountReq.getRequirementType());
 
         CapacityRequirement capacityReq = mountReq.getCapacityRequirement();
         assertRange(10737418240L, 10737418240L, capacityReq.getNumberRange());
-        assertEquals(EACH, capacityReq.getRequirementType());
     }
     
 

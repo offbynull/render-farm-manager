@@ -36,7 +36,6 @@ public final class SocketRequirement extends Requirement {
     /**
      * Construct a {@link SocketRequirement} object.
      * @param numberRange number range
-     * @param requirementType requirement type
      * @param whereCondition where condition
      * @param coreRequirements CPU core requirements
      * @throws NullPointerException if any argument is {@code null}
@@ -46,9 +45,9 @@ public final class SocketRequirement extends Requirement {
      * {@code NumberCheckUtils.isNonFractional(numberRange.getStart())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
      */
-    public SocketRequirement(NumberRange numberRange, RequirementType requirementType, Expression whereCondition,
+    public SocketRequirement(NumberRange numberRange, Expression whereCondition,
             List<CoreRequirement> coreRequirements) {
-        super(numberRange, requirementType, whereCondition);
+        super(numberRange, whereCondition);
         
         Validate.notNull(coreRequirements);
         Validate.noNullElements(coreRequirements);

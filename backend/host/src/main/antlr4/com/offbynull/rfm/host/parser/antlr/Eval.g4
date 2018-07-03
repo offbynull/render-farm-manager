@@ -22,14 +22,13 @@ main: core tagEntry* reqEntry;
 core: ID NUMBER ID*;
 
 tagEntry: ID ASSIGN expr;
-reqEntry: numberRange? ID selectionType? whereClause? ('{' reqEntry* '}')?;
+reqEntry: numberRange? ID whereClause? ('{' reqEntry* '}')?;
 
 numberRange:
         NUMBER                                                                        # ExactRange
         | '[' NUMBER ',' NUMBER ']'                                                   # BetweenRange
+        | '?'                                                                         # Unranged
         ;
-
-selectionType: EACH | TOTAL;
 
 whereClause: WHERE expr;
 
@@ -57,8 +56,7 @@ expr:
 
 WHERE: 'where';
 
-EACH: 'each';
-TOTAL: 'total';
+QUESTION: '?';
 
 BOOLEAN: 'true' | 'false';
 NUMBER: '-'? [0-9]+ ('.' [0-9]+)? (( 'k' | 'm' | 'g' | 't' | 'p' | 'e' ) 'b'?)?;

@@ -32,7 +32,6 @@ public final class MountRequirement extends Requirement implements CapacityEnabl
     /**
      * Construct a {@link MountRequirement} object.
      * @param numberRange number range
-     * @param requirementType requirement type
      * @param whereCondition where condition
      * @param capacityRequirement capacity requirement (in bytes)
      * @throws NullPointerException if any argument is {@code null}
@@ -42,9 +41,9 @@ public final class MountRequirement extends Requirement implements CapacityEnabl
      * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
      */
-    public MountRequirement(NumberRange numberRange, RequirementType requirementType, Expression whereCondition,
+    public MountRequirement(NumberRange numberRange, Expression whereCondition,
             CapacityRequirement capacityRequirement) {
-        super(numberRange, requirementType, whereCondition);
+        super(numberRange, whereCondition);
 
         Validate.notNull(capacityRequirement);
         
