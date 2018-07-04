@@ -6,9 +6,10 @@ import com.offbynull.rfm.host.model.expression.LiteralExpression;
 import com.offbynull.rfm.host.model.expression.RequirementFunction;
 import com.offbynull.rfm.host.model.expression.RequirementFunctionBuiltIns;
 import com.offbynull.rfm.host.model.expression.VariableExpression;
+import com.offbynull.rfm.host.model.requirement.CapacityEnabledRequirement;
+import com.offbynull.rfm.host.model.requirement.CpuRequirement;
 import com.offbynull.rfm.host.parser.Parser;
 import com.offbynull.rfm.host.model.requirement.HostRequirement;
-import com.offbynull.rfm.host.model.requirement.NumberRange;
 import com.offbynull.rfm.host.model.requirement.Requirement;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import static java.util.stream.Collectors.joining;
+import static org.apache.commons.lang3.ClassUtils.isAssignable;
 import static org.apache.commons.lang3.StringUtils.capitalize;
 import static org.apache.commons.lang3.StringUtils.removeEnd;
 import static org.apache.commons.lang3.StringUtils.uncapitalize;
@@ -40,24 +42,19 @@ final class QuerySqlEvaluators {
                 + "[1,5] host {"
                 + "  1 socket where socket.s_brand==\"intel\" {"
                 + "    2 core where !core.b_hyperthread {"
-                + "      [2,999999] cpu where cpu.b_avx==true && socket.s_model==\"xeon\" {"
-                + "        100000 capacity"
-                + "      }"
+                + "      [2,999999] cpu 100000 capacity where cpu.b_avx==true && socket.s_model==\"xeon\" { }"
+                + "      1 cpu 5000 capacity where socket.s_model==\"haswell\" { }"
                 + "    }"
                 + "  }"
-                + "  1 gpu {"
-                + "    available"
-                + "  }"
-                + "  [1,2] mount {"
-                + "    256gb capacity"
-                + "  }"
-                + "  ram where ram.n_speed>=3000 && ram.s_brand==\"samsung\" {"
-                + "    64gb capacity"
-                + "  }"
+                + "  1 gpu with 1 capacity { }"
+                + "  1 mount with 256gb capacity where b_rotational==true" // for saving work
+                + "  1 mount with 32gb capacity where b_rotational=false" // for temp storage
+                + "  1 ram with 64gb capacity where ram.n_speed>=3000 && ram.s_brand==\"samsung\" { }"
                 + "}");
 
         QueryTracker qt = new QueryTracker();
-        String query = selectRequirement(
+        
+        String rawData = readAllRequirements(
                 qt,
                 List.of(
                         hr,
@@ -66,41 +63,35 @@ final class QuerySqlEvaluators {
                         hr.getSocketRequirements().get(0).getCoreRequirements().get(0).getCpuRequirements().get(0)
                 )
         );
+//        String evalMatchingData = filterRequirementByWhereCondition(
+//                qt,
+//                rawData,
+//                List.of(
+//                        hr,
+//                        hr.getSocketRequirements().get(0),
+//                        hr.getSocketRequirements().get(0).getCoreRequirements().get(0),
+//                        hr.getSocketRequirements().get(0).getCoreRequirements().get(0).getCpuRequirements().get(0)
+//                )
+//        );
+        String countMatchingData = filterByCapacity(
+                qt,
+                rawData,
+                CpuRequirement.class,
+                List.of(
+                        hr,
+                        hr.getSocketRequirements().get(0),
+                        hr.getSocketRequirements().get(0).getCoreRequirements().get(0)
+                ),
+                List.of(
+                        hr.getSocketRequirements().get(0).getCoreRequirements().get(0).getCpuRequirements().get(0),
+                        hr.getSocketRequirements().get(0).getCoreRequirements().get(0).getCpuRequirements().get(1)
+                )
+        );
         
-        System.out.println(query);
+        System.out.println(countMatchingData);
     }
     
-    public static String selectTopSpecificationsByRequirementChain(QueryTracker qt, List<Requirement> requirementChain) {
-        Validate.isTrue(!requirementChain.isEmpty());
-        
-        qt.enter();
-        try {
-            Requirement firstRequirement = requirementChain.get(0);
-            String firstName = getName(firstRequirement);
-            
-            Set<String> hostkeys = getKeys(firstRequirement);
-            
-            
-            String id1 = qt.next();
-            String qr1 = selectRequirement(qt, requirementChain);
-            
-            String id2 = qt.next();
-            Set<String> id2SelectFields = new LinkedHashSet<>();
-            hostkeys.stream().map(f -> id1 + "." + firstName + "_" + f + " AS " + f).forEachOrdered(id2SelectFields::add);
-            String qr2 = ""
-                    + "SELECT " + id2SelectFields.stream().collect(joining(",")) + "\n"
-                    + "FROM\n"
-                    + "(\n"
-                    + qr1
-                    + "\n) " + id1 + " WHERE " + id1 + ".eval=true";
-            
-            return qt.indentLines(qr2);
-        } finally {
-            qt.exit();
-        }
-    }
-    
-    public static String selectRequirement(QueryTracker qt, List<Requirement> requirementChain) {
+    public static String readAllRequirements(QueryTracker qt, List<Requirement> requirementChain) {
         qt.enter();
         try {
             Requirement finalRequirement = requirementChain.get(requirementChain.size() - 1);
@@ -114,60 +105,87 @@ final class QuerySqlEvaluators {
             String lastId = null;
             String joinChain = "";
             
-            qt.enter();
-            try {
-                for (Requirement requirement : requirementChain) {
-                    String name = getName(requirement);
 
-                    Set<String> keys = getKeys(requirement);
-                    Set<String> props = new HashSet<>();
+            for (Requirement requirement : requirementChain) {
+                String name = getName(requirement);
 
-                    Set<String> dbKeys = getDbKey(requirementChain, requirement);
-                    
-                    collectVariableNames(finalWhere, name, props);
+                Set<String> keys = getKeys(requirement);
+                Set<String> props = new HashSet<>();
 
-                    String id = qt.next();
-                    String qr = selectFlattenedProperties(qt, name, dbKeys, props);
+                Set<String> dbKeys = getDbKey(requirementChain, requirement);
 
-                    keys.stream().map(f -> id + "." + f + " AS " + name + "_" + f).forEachOrdered(id1SelectFields::add);
-                    props.stream().map(f -> id + "." + f + " AS " + name + "_" + f).forEachOrdered(id1SelectFields::add);
-                    
-                    keys.stream().map(f -> name + "_" + f).forEachOrdered(id2SelectFields::add);
+                collectVariableNames(finalWhere, name, props);
 
-                    if (lastId == null) {
-                        joinChain += ""
-                                + "(\n"
-                                + qt.indentLines(1, qr)
-                                + "\n) " + id + "\n";
-                    } else {
-                        final String _lastId = lastId; // must be assigned to new final var becuase of use in lambda
-                        joinChain += ""
-                                + "RIGHT JOIN\n"
-                                + "(\n"
-                                + qt.indentLines(1, qr)
-                                + "\n) " + id + "\n"
-                                + "ON " + lastDbKeys.stream().map(k -> _lastId + "." + k + "=" + id + "." + k).collect(joining(" AND "))
-                                + "\n";
-                    }
+                String id = qt.next();
+                String qr = selectFlattenedProperties(qt, name, dbKeys, props);
 
-                    lastId = id;
-                    lastDbKeys = dbKeys;
-               }
-            } finally {
-                qt.exit();
+                keys.stream().map(f -> id + "." + f + " AS " + name + "_" + f).forEachOrdered(id1SelectFields::add);
+                props.stream().map(f -> id + "." + f + " AS " + name + "_" + f).forEachOrdered(id1SelectFields::add);
+
+                keys.stream().map(f -> name + "_" + f).forEachOrdered(id2SelectFields::add);
+
+                if (lastId == null) {
+                    joinChain += ""
+                            + "(\n"
+                            + qt.indentLines(1, qr)
+                            + "\n) " + id + "\n";
+                } else {
+                    final String _lastId = lastId; // must be assigned to new final var becuase of use in lambda
+                    joinChain += ""
+                            + "RIGHT JOIN\n"
+                            + "(\n"
+                            + qt.indentLines(1, qr)
+                            + "\n) " + id + "\n"
+                            + "ON " + lastDbKeys.stream().map(k -> _lastId + "." + k + "=" + id + "." + k).collect(joining(" AND "))
+                            + "\n";
+                }
+
+                lastId = id;
+                lastDbKeys = dbKeys;
             }
+            
             
             String qr1 = ""
                     + "SELECT "
                     + id1SelectFields.stream().collect(joining(",")) + "\n"
                     + "FROM\n"
                     + joinChain;
-
+            
+            return qr1;
+        } finally {
+            qt.exit();
+        }
+    }
+    
+    public static String filterByWhereCondition(QueryTracker qt, String input, List<Requirement> requirementChain) {
+        qt.enter();
+        try {
+            Requirement finalRequirement = requirementChain.get(requirementChain.size() - 1);
+            Expression finalWhere = finalRequirement.getWhereCondition();
+            
+            
+            String id1 = qt.next();
             String id2 = qt.next();
-            id2SelectFields = id2SelectFields.stream().map(f -> id2 + "." + f).collect(
-                    LinkedHashSet::new,
-                    LinkedHashSet::add,
-                    LinkedHashSet::addAll);
+            String id3 = qt.next();
+            Set<String> id1SelectFields = new LinkedHashSet<>();
+            Set<String> id2SelectFields = new LinkedHashSet<>();
+            Set<String> id3SelectFields = new LinkedHashSet<>();
+            for (Requirement requirement : requirementChain) {
+                String name = getName(requirement);
+                Set<String> keys = getKeys(requirement);
+                keys.stream().map(f -> id1 + "." + name + "_" + f).forEachOrdered(id1SelectFields::add);
+                keys.stream().map(f -> id2 + "." + name + "_" + f).forEachOrdered(id2SelectFields::add);
+                keys.stream().map(f -> id3 + "." + name + "_" + f).forEachOrdered(id3SelectFields::add);
+            }
+            
+            String qr1 = ""
+                    + "SELECT "
+                    + id1SelectFields.stream().collect(joining(",")) + "\n"
+                    + "FROM\n"
+                    + "(\n"
+                    + qt.indentLines(1, input)
+                    + "\n) " + id1;
+
             id2SelectFields.add(expressionize(finalWhere, qt, id2, EMPTY_MAP) + " AS expr");
             String qr2 = ""
                     + "SELECT "
@@ -176,12 +194,7 @@ final class QuerySqlEvaluators {
                     + "(\n"
                     + qt.indentLines(1, qr1)
                     + "\n) " + id2;
-
-            String id3 = qt.next();
-            Set<String> id3SelectFields = lastDbKeys.stream().map(f -> id3 + "." + f).collect(
-                    LinkedHashSet::new,
-                    LinkedHashSet::add,
-                    LinkedHashSet::addAll);
+            
             String qr3 = ""
                     + "SELECT "
                     + id3SelectFields.stream().collect(joining(",")) + "\n"
@@ -190,7 +203,7 @@ final class QuerySqlEvaluators {
                     + qt.indentLines(1, qr2)
                     + "\n) " + id3 + " WHERE " + id3 + ".eval=true";
             
-            return qt.indentLines(qr3);
+            return qr3;
         } finally {
             qt.exit();
         }
@@ -309,7 +322,7 @@ final class QuerySqlEvaluators {
     
     
     
-    private static String countAndReturnWithinRange(QueryTracker qt, String input, Collection<String> parentPk, BigDecimal minCount) {
+    private static String filterByCount(QueryTracker qt, String input, Collection<String> parentPk, BigDecimal minCount) {
         qt.enter();
         try {
             if (parentPk.isEmpty()) {
@@ -360,11 +373,54 @@ final class QuerySqlEvaluators {
         }
     }
     
-    private static <U extends Requirement> NumberRange combineRanges(List<U> requirements) {
-        return requirements.stream()
-                .map(Requirement::getNumberRange)
-                .reduce(NumberRange::combineNumberRanges)
-                .orElse(NumberRange.NONE);
+    private static <U extends Requirement> String filterByCapacity(
+            QueryTracker qt,
+            String input,
+            Class<U> childRequirementClass,
+            List<Requirement> parentRequirementChain,
+            List<U> childRequirements) {
+        Validate.isTrue(isAssignable(childRequirementClass, CapacityEnabledRequirement.class));
+        Validate.isTrue(!parentRequirementChain.isEmpty());
+        
+        qt.enter();
+        try {
+            BigDecimal minCapacity = childRequirements.stream()
+                    .map(c -> (CapacityEnabledRequirement) c)
+                    .map(c -> c.getCapacityRange().getStart())
+                    .reduce(BigDecimal.ZERO, (a,b) -> a.add(b));
+            
+            String id1 = qt.next();
+            String id2 = qt.next();
+            Set<String> id1SelectFields = new LinkedHashSet<>();
+            Set<String> id2SelectFields = new LinkedHashSet<>();
+            Set<String> id1GroupByFields = new LinkedHashSet<>();
+            for (Requirement requirement : parentRequirementChain) {
+                String name = getName(requirement);
+                Set<String> keys = getKeys(requirement);
+                keys.stream().map(f -> id1 + "." + name + "_" + f).forEachOrdered(id1SelectFields::add);
+                keys.stream().map(f -> id1 + "." + name + "_" + f).forEachOrdered(id1GroupByFields::add);
+                keys.stream().map(f -> id1 + "." + name + "_" + f).forEachOrdered(id2SelectFields::add);
+            }
+
+            id1SelectFields.add("sum(" + id1 + ".capacity) AS capacity_sum");
+            String qr1 = ""
+                    + "SELECT " + id1SelectFields.stream().collect(joining(",")) + "\n"
+                    + "FROM (\n"
+                    + qt.indentLines(2, input)
+                    + "\n) " + id1 + "\n"
+                    + "GROUP BY " + id1GroupByFields.stream().collect(joining(","));
+
+            String qr2 = ""
+                    + "SELECT " + id2SelectFields.stream().collect(joining(",")) + "\n"
+                    + "FROM (\n"
+                    + qt.indentLines(1, qr1)
+                    + "\n) " + id2 + "\n"
+                    + "WHERE " + id2 + ".capacity_sum >= " + qt.param("minCount", minCapacity);
+
+            return qt.indentLines(qr2);
+        } finally {
+            qt.exit();
+        }
     }
     
     
@@ -407,13 +463,28 @@ final class QuerySqlEvaluators {
         
         return ret;
     }
+
+    private static Set<String> getDbKey(List<Requirement> requirementChain) {
+        LinkedHashSet<String> ret = new LinkedHashSet<>();
+        
+        for (Requirement req : requirementChain) {
+            Set<String> key = getKeys(req);
+            ret.addAll(key);
+        }
+        
+        return ret;
+    }
     
     private static Set<String> getKeys(Requirement requirement) {
-        String name = capitalize(getName(requirement));
+        return getKeys(requirement.getClass());
+    }
+    
+    private static Set<String> getKeys(Class<?> requirementCls) {
+        String name = capitalize(getName(requirementCls));
 
         String specClassStr = "com.offbynull.rfm.host.model.specification." + name + "Specification";
         try {
-            Class<?> specClass = requirement.getClass().getClassLoader().loadClass(specClassStr);
+            Class<?> specClass = requirementCls.getClassLoader().loadClass(specClassStr);
             return (Set<String>) MethodUtils.invokeStaticMethod(specClass, "getKeyPropertyNames");
         } catch (ReflectiveOperationException roe) {
             throw new IllegalStateException(roe);
@@ -421,7 +492,11 @@ final class QuerySqlEvaluators {
     }
     
     private static String getName(Requirement requirement) {
-        String className = requirement.getClass().getSimpleName();
+        return getName(requirement.getClass());
+    }
+    
+    private static String getName(Class<?> requirementCls) {
+        String className = requirementCls.getSimpleName();
         Validate.isTrue(className.endsWith("Requirement"));
                 
         String reqName = uncapitalize(removeEnd(className, "Requirement"));

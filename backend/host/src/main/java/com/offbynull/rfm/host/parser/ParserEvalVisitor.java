@@ -184,12 +184,19 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
         
         
         // Get number range
-        NumberRangeContext numberRangeCtx = ctx.numberRange();
-        NumberRange numRange;
+        NumberRangeContext numberRangeCtx = ctx.reqRange().numberRange();
+        NumberRange numRange = null;
         if (numberRangeCtx != null) {
-            numRange = (NumberRange) visit(ctx.numberRange());
-        } else {
-            numRange = new NumberRange(ONE, ONE);
+            numRange = (NumberRange) visit(ctx.reqRange().numberRange());
+        }
+
+
+
+        // Evaluate with clause
+        NumberRange capacityRange = null;
+        if (ctx.withClause() != null) {
+            parseIsTrue(ctx, ctx.withClause().ID().getText().equals("capacity"), "With clause must be for capacity");
+            capacityRange = (NumberRange) visit(ctx.withClause().numberRange());
         }
         
         
@@ -209,9 +216,10 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
         Method method = stream(InternalRequirementFactory.class.getMethods())
                 .filter(m -> m.getName().equals(name))                                  // match name
                 .filter(m -> Requirement.class.isAssignableFrom(m.getReturnType()))     // match ret type
-                .filter(m -> m.getParameterCount() >= 2)                                // must have >= 2 params
+                .filter(m -> m.getParameterCount() >= 3)                                // must have >= 2 params
                 .filter(m -> m.getParameterTypes()[0] == NumberRange.class)             // param[0] must be numberrange
-                .filter(m -> m.getParameterTypes()[1] == Expression.class)              // param[1] must be expression
+                .filter(m -> m.getParameterTypes()[1] == NumberRange.class)             // param[1] must be numberrange (capacity)
+                .filter(m -> m.getParameterTypes()[2] == Expression.class)              // param[2] must be expression
                 .filter(m -> (m.getModifiers() & Modifier.STATIC) != 0)                 // must be static
                 .findAny().orElseThrow(() -> new ParserEvalException(ctx, "Unrecognized requirement type: %s", name));
         
@@ -229,9 +237,11 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
         
         LinkedList<Class<?>> expectedReqTypes = new LinkedList<>(asList(paramTypes));
         expectedReqTypes.removeFirst(); // remove numberrange param (not a requirement)
+        expectedReqTypes.removeFirst(); // remove capacityrange param (not a requirement)
         expectedReqTypes.removeFirst(); // remove expression param (not a requirement)
         
         invokeArgs.add(numRange);      // place in number range
+        invokeArgs.add(capacityRange); // place in capacity range
         invokeArgs.add(expr);          // place in where expression
         expectedReqTypes.stream()
                 .map(c -> c.getComponentType()) // req args for factory method are always arrays, so get the component type of that array

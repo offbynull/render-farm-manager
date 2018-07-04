@@ -23,9 +23,9 @@ package com.offbynull.rfm.host.model.requirement;
 public interface CapacityEnabledRequirement {
 
     /**
-     * Get capacity requirement
-     * @return capacity requirement
+     * Get capacity range.
+     * @return capacity range
      */
-    CapacityRequirement getCapacityRequirement();
+    NumberRange getCapacityRange();
     
 }

@@ -18,6 +18,7 @@ package com.offbynull.rfm.host.model.requirement;
 
 import com.offbynull.rfm.host.model.expression.Expression;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast0;
+import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtMost1;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
 import org.apache.commons.lang3.Validate;
 
@@ -27,39 +28,36 @@ import org.apache.commons.lang3.Validate;
  */
 public final class GpuRequirement extends Requirement implements CapacityEnabledRequirement {
     
-    private final CapacityRequirement capacityRequirement; // doesn't make sense being anything other than 0 or 1
+    private final NumberRange capacityRange; // doesn't make sense being anything other than 0 or 1
     
     /**
      * Construct a {@link GpuRequirement} object.
      * @param numberRange number range
      * @param whereCondition where condition
-     * @param capacityRequirement available requirement
+     * @param capacityRange available range
      * @throws NullPointerException if any argument is {@code null}
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
      * {@code NumberCheckUtils.isAtLeast0(numberRange.getStart())},
+     * {@code NumberCheckUtils.isAtMost1(numberRange.getEnd())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getStart())},
-     * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
      */
     public GpuRequirement(NumberRange numberRange, Expression whereCondition,
-            CapacityRequirement capacityRequirement) {
+            NumberRange capacityRange) {
         super(numberRange, whereCondition);
         
-        Validate.notNull(capacityRequirement);
+        Validate.notNull(capacityRange);
         
         isAtLeast0(numberRange.getStart());
+        isAtMost1(numberRange.getEnd());
         isNonFractional(numberRange.getStart());
         isNonFractional(numberRange.getEnd());
         
-        this.capacityRequirement = capacityRequirement;
+        this.capacityRange = capacityRange;
     }
 
-    /**
-     * Get capacity requirement
-     * @return capacity requirement
-     */
     @Override
-    public CapacityRequirement getCapacityRequirement() {
-        return capacityRequirement;
+    public NumberRange getCapacityRange() {
+        return capacityRange;
     }
 }

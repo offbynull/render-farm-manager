@@ -22,14 +22,18 @@ main: core tagEntry* reqEntry;
 core: ID NUMBER ID*;
 
 tagEntry: ID ASSIGN expr;
-reqEntry: numberRange? ID whereClause? ('{' reqEntry* '}')?;
+reqEntry: reqRange ID withClause? whereClause? ('{' reqEntry* '}')?;
 
 numberRange:
         NUMBER                                                                        # ExactRange
         | '[' NUMBER ',' NUMBER ']'                                                   # BetweenRange
-        | '?'                                                                         # Unranged
         ;
 
+reqRange: numberRange
+        | '?'
+        ;
+
+withClause: WITH numberRange ID;
 whereClause: WHERE expr;
 
 // Operator precedence is copied from Java...
@@ -54,6 +58,7 @@ expr:
 
 
 
+WITH: 'with';
 WHERE: 'where';
 
 QUESTION: '?';

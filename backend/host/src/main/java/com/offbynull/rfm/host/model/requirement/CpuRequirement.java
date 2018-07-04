@@ -27,13 +27,13 @@ import org.apache.commons.lang3.Validate;
  */
 public final class CpuRequirement extends Requirement implements CapacityEnabledRequirement {
 
-    private final CapacityRequirement capacityRequirement;
+    private final NumberRange capacityRange;
     
     /**
      * Construct a {@link CpuRequirement} object.
      * @param numberRange number range
      * @param whereCondition where condition
-     * @param capacityRequirement capacity requirement (in CFS slices)
+     * @param capacityRange capacity range (in CFS slices)
      * @throws NullPointerException if any argument is {@code null}
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
      * {@code NumberCheckUtils.isAtLeast0(numberRange.getStart())},
@@ -41,20 +41,20 @@ public final class CpuRequirement extends Requirement implements CapacityEnabled
      * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
      */
     public CpuRequirement(NumberRange numberRange, Expression whereCondition,
-            CapacityRequirement capacityRequirement) {
+            NumberRange capacityRange) {
         super(numberRange, whereCondition);
 
-        Validate.notNull(capacityRequirement);
+        Validate.notNull(capacityRange);
         
         isAtLeast1(numberRange.getStart());
         isNonFractional(numberRange.getStart());
         isNonFractional(numberRange.getEnd());
         
-        this.capacityRequirement = capacityRequirement;
+        this.capacityRange = capacityRange;
     }
 
     @Override
-    public CapacityRequirement getCapacityRequirement() {
-        return capacityRequirement;
+    public NumberRange getCapacityRange() {
+        return capacityRange;
     }
 }

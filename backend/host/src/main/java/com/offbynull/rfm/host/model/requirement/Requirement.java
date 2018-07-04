@@ -40,6 +40,25 @@ public abstract class Requirement {
 
     /**
      * Get number range.
+     * <p>
+     * If this is NOT {@code null}, it means the children of this requirement are replicated for each parent requirement found. For example,
+     * imagine the following requirement hierarchy...
+     * <pre>
+     * [1,5] parent {
+     *   [3,6] child
+     * }
+     * </pre>
+     * 1 to 5 parents will be returned. For each parent found, that parent will have anywhere from 3 to 6 children that are guaranteed to be
+     * owned by that parent.
+     * <p>
+     * If this is {@code null}, it means the children of this requirement are spread across one or more parents. For example, image the
+     * following requirement hiearachy...
+     * <pre>
+     * ? parent {
+     *   [3,6] child
+     * }
+     * </pre>
+     * 3 to 6 children will be found, but each what parent they're bound to is unknown.
      * @return number range
      */
     public NumberRange getNumberRange() {

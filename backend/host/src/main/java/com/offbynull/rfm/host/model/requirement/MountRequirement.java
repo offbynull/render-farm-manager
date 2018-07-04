@@ -27,39 +27,34 @@ import org.apache.commons.lang3.Validate;
  */
 public final class MountRequirement extends Requirement implements CapacityEnabledRequirement {
 
-    private final CapacityRequirement capacityRequirement;
+    private final NumberRange capacityRange;
     
     /**
      * Construct a {@link MountRequirement} object.
      * @param numberRange number range
      * @param whereCondition where condition
-     * @param capacityRequirement capacity requirement (in bytes)
+     * @param capacityRange capacity range (in bytes)
      * @throws NullPointerException if any argument is {@code null}
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
      * {@code NumberCheckUtils.isAtLeast1(numberRange.getStart())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getStart())},
-     * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())},
      * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
      */
     public MountRequirement(NumberRange numberRange, Expression whereCondition,
-            CapacityRequirement capacityRequirement) {
+            NumberRange capacityRange) {
         super(numberRange, whereCondition);
 
-        Validate.notNull(capacityRequirement);
+        Validate.notNull(capacityRange);
         
         isAtLeast1(numberRange.getStart());
         isNonFractional(numberRange.getStart());
         isNonFractional(numberRange.getEnd());
         
-        this.capacityRequirement = capacityRequirement;
+        this.capacityRange = capacityRange;
     }
 
-    /**
-     * Get capacity requirement
-     * @return capacity requirement
-     */
     @Override
-    public CapacityRequirement getCapacityRequirement() {
-        return capacityRequirement;
+    public NumberRange getCapacityRange() {
+        return capacityRange;
     }
 }

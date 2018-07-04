@@ -11,19 +11,14 @@ import org.apache.commons.lang3.Validate;
 final class QueryTracker {
     static final String PARAM_BORDER = ":::"; 
     
-    private LinkedList<Integer> tracker;
-    private int idCounter = -1;
+    private final LinkedList<Integer> tracker = new LinkedList<>();
+    private int idCounter = 0;
     
-    private Map<String, Object> paramMapping;
-    private int paramCounter = -1;
+    private final Map<String, Object> paramMapping = new HashMap<>();
+    private int paramCounter = 0;
 
     public void enter() {
-        if (tracker == null) {
-            tracker = new LinkedList<>();
-            paramMapping = new HashMap<>();
-        } else {
-            tracker.addLast(idCounter);
-        }
+        tracker.addLast(idCounter);
         paramCounter = 0;
         idCounter = 0;
     }
@@ -51,12 +46,8 @@ final class QueryTracker {
     }
 
     public void exit() {
-        if (tracker.isEmpty()) {
-            tracker = null;
-            paramMapping = null;
-        } else {
-            idCounter = tracker.removeLast();
-        }
+        idCounter = tracker.removeLast();
+        idCounter++;
     }
 
     public String indentLines(String str) {
