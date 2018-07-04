@@ -31,8 +31,8 @@ import static org.apache.commons.lang3.StringUtils.uncapitalize;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.reflect.MethodUtils;
 
-final class QuerySqlEvaluators {
-    private QuerySqlEvaluators() {
+final class QuerySql {
+    private QuerySql() {
         // do nothing
     }
 

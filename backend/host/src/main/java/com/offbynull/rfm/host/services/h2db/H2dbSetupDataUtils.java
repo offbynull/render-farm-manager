@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import static java.util.stream.Collectors.joining;
 import javax.sql.DataSource;
+import static org.apache.commons.lang3.StringUtils.capitalize;
 
 final class H2dbSetupDataUtils {
     private H2dbSetupDataUtils() {
@@ -29,45 +30,56 @@ final class H2dbSetupDataUtils {
         try (Connection conn = dataSource.getConnection()) {
             createTableSpecSql(conn,
                     "host", HostSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]),
-                    null, null);
+                    null, null,
+                    false);
             createTableSpecPropSql(conn,
                     "host", HostSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]));
             
             createTableSpecSql(conn,
                     "socket", SocketSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]),
-                    "host", HostSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]));
+                    "host", HostSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]),
+                    false);
             createTableSpecPropSql(conn,
                     "socket", SocketSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]));
             
             createTableSpecSql(conn,
                     "core", CoreSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]),
-                    "socket", SocketSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]));
+                    "socket", SocketSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]),
+                    false);
             createTableSpecPropSql(conn,
                     "core", CoreSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]));
             
             createTableSpecSql(conn,
                     "cpu", CpuSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]),
-                    "core", CoreSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]));
+                    "core", CoreSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]),
+                    true);
             createTableSpecPropSql(conn,
                     "cpu", CpuSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]));
             
             createTableSpecSql(conn,
                     "gpu", GpuSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]),
-                    "host", HostSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]));
+                    "host", HostSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]),
+                    true);
             createTableSpecPropSql(conn,
                     "gpu", GpuSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]));
             
             createTableSpecSql(conn,
                     "mount", MountSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]),
-                    "host", HostSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]));
+                    "host", HostSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]),
+                    true);
             createTableSpecPropSql(conn,
                     "mount", MountSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]));
             
             createTableSpecSql(conn,
                     "ram", RamSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]),
-                    "host", HostSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]));
+                    "host", HostSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]),
+                    true);
             createTableSpecPropSql(conn,
                     "ram", RamSpecification.getKeyPropertyNames().stream().toArray(i -> new String[i]));
+            
+            createTableWorkerSql(conn,
+                    new String[] { "cpu", "gpu", "mount", "ram" },
+                    new String[] { "host", "socket", "core", "cpu", "gpu", "mount", "ram" });
             
             createTableWorkSql(conn);
             createTableWorkTagSql(conn);
@@ -80,7 +92,8 @@ final class H2dbSetupDataUtils {
         }
     }
     
-    private static void createTableSpecSql(Connection conn, String name, String[] pks, String fkTable, String[] fks) throws IOException {
+    private static void createTableSpecSql(Connection conn, String name, String[] pks, String fkTable, String[] fks,
+            boolean capacityEnabled) throws IOException {
         LinkedHashSet<String> columns = new LinkedHashSet<>();
         columns.addAll(asList(pks));
         if (fkTable != null && fks != null) {
@@ -106,6 +119,11 @@ final class H2dbSetupDataUtils {
             }
             tableStmtElems.add(column + " " + type + " NOT NULL");
         }
+        
+        if (capacityEnabled) {
+            tableStmtElems.add("capacity NUMBER(38,10) NOT NULL CHECK(capacity >= 0)");
+        }
+         
         tableStmtElems.add("PRIMARY KEY(" + stream(pks).collect(joining(", ")) + ")");
         if (fkTable != null && fks != null) {
             tableStmtElems.add(""
@@ -120,8 +138,22 @@ final class H2dbSetupDataUtils {
                 "\n)")
         );
         
+        String countTriggerClsName = CapacityTrigger.class.getName() + capitalize(name);
+        String countTrigger = "CREATE TRIGGER IF NOT EXISTS " + name + "_spec_capacity_trigger"
+                    + " AFTER UPDATE ON " + name + "_spec"
+                    + " FOR EACH ROW CALL \"" + countTriggerClsName + "\"";
+        
+        String capacityTriggerClsName = CapacityTrigger.class.getName() + capitalize(name);
+        String capacityTrigger = "CREATE TRIGGER IF NOT EXISTS " + name + "_spec_capacity_trigger"
+                    + " AFTER UPDATE ON " + name + "_spec"
+                    + " FOR EACH ROW CALL \"" + capacityTriggerClsName + "\"";
+                
         try (Statement stmt = conn.createStatement()) {
             stmt.execute(table);
+            stmt.execute(countTrigger);
+            if (capacityEnabled) {
+                stmt.execute(capacityTrigger);
+            }
         } catch (SQLException sqle) {
             throw new IOException(sqle);
         }
@@ -166,6 +198,33 @@ final class H2dbSetupDataUtils {
         String table = tableStmtElems.stream().collect(Collectors.joining(
                 ",\n",
                 "CREATE TABLE IF NOT EXISTS " + name + "_prop(\n",
+                "\n)")
+        );
+        
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(table);
+        } catch (SQLException sqle) {
+            throw new IOException(sqle);
+        }
+    }
+    
+    private static void createTableWorkerSql(Connection conn, String[] capacityNames, String[] countNames) throws IOException {
+        List<String> tableStmtElems = new ArrayList<>();
+
+        tableStmtElems.add("s_host VARCHAR(2048) NOT NULL");
+        tableStmtElems.add("n_port BIGDECIMAL(38,10) NOT NULL");
+        for (String capacityName : capacityNames) {
+            tableStmtElems.add(capacityName + "_capacity_sum NUMBER(38,10) NOT NULL CHECK(" + capacityName + "_capacity_sum >= 0)");
+        }
+        for (String countName : countNames) {
+            tableStmtElems.add(countName + "_count NUMBER(38,10) NOT NULL CHECK(" + countName + "_count >= 0)");
+        }
+        tableStmtElems.add("PRIMARY KEY(s_host,n_port)");
+        tableStmtElems.add("FOREIGN KEY(s_host,n_port) REFERENCES host_spec(s_host,n_port) ON DELETE CASCADE ON UPDATE CASCADE");
+        
+        String table = tableStmtElems.stream().collect(Collectors.joining(
+                ",\n",
+                "CREATE TABLE IF NOT EXISTS worker(\n",
                 "\n)")
         );
         

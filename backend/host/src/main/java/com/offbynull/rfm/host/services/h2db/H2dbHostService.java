@@ -24,9 +24,6 @@ import com.offbynull.rfm.host.service.HostService;
 import com.offbynull.rfm.host.service.StoredWork;
 import com.offbynull.rfm.host.service.StoredWorker;
 import java.io.IOException;
-import java.math.BigDecimal;
-import static java.math.BigDecimal.ZERO;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import javax.sql.DataSource;
@@ -97,52 +94,28 @@ public class H2dbHostService implements HostService {
 
     @Override
     public void bind(String id, String host, int port) throws IOException {
-        H2dbBindDataUtils.bind(dataSource, id, host, port);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void unbind(String id, String host, int port) throws IOException {
-        H2dbBindDataUtils.unbind(dataSource, id, host, port);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Set<Bind> listWorkBinds(String id) throws IOException {
-        return H2dbBindDataUtils.listWorkBinds(dataSource, id);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Set<Bind> listWorkerBinds(String host, int port) throws IOException {
-        return H2dbBindDataUtils.listWorkerBinds(dataSource, host, port);
+        throw new UnsupportedOperationException();
     }
 
 
 
     @Override
     public StoredWork findBindableWork(String host, int port) throws IOException {
-        StoredWorker storedWorker = H2dbWorkerDataUtils.getWorker(dataSource, host, port);
-        if (storedWorker == null) { // Worker was removed or something was wrong with it.
-            return null;
-        }
-        
-        String key = null;
-        BigDecimal minPriority = ZERO;
-        while (true) {
-            List<StoredWork> storedWorks = H2dbWorkDataUtils.getWorksPrioritized(dataSource, key, minPriority, Direction.FORWARD, 100);
-            if (storedWorks.isEmpty()) {
-                return null;
-            }
-            
-            for (StoredWork storedWork : storedWorks) {
-                Worker worker = storedWorker.getWorker();
-                Work work = storedWork.getWork();
-                if (BindEvaluator.evaluate(work)) {
-                    return storedWork;
-                }
-            }
-            
-            StoredWork last = storedWorks.get(storedWorks.size() - 1);
-            key = last.getKey();
-            minPriority = last.getWork().getCore().getPriority();
-        }
+        throw new UnsupportedOperationException();
     }
 }

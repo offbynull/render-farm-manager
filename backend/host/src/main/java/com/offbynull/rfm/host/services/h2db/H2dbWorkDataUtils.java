@@ -16,7 +16,6 @@
  */
 package com.offbynull.rfm.host.services.h2db;
 
-import com.offbynull.rfm.host.service.Core;
 import com.offbynull.rfm.host.service.Work;
 import com.offbynull.rfm.host.service.Direction;
 import com.offbynull.rfm.host.service.StoredWork;
@@ -68,17 +67,17 @@ public final class H2dbWorkDataUtils {
                     PreparedStatement insertWorkParentPs = conn.prepareStatement(insertWorkParentStr);
                     PreparedStatement deleteWritetimePs = conn.prepareStatement(deleteWritetimeStr);
                     PreparedStatement insertWritetimePs = conn.prepareStatement(insertWritetimeStr)) {
-                deleteWorkPs.setObject(1, work.getCore().getId());
+                deleteWorkPs.setObject(1, work.getId());
                 deleteWorkPs.executeUpdate();
-                insertWorkPs.setObject(1, work.getCore().getId());
-                insertWorkPs.setObject(2, work.getCore().getPriority());
+                insertWorkPs.setObject(1, work.getId());
+                insertWorkPs.setObject(2, work.getPriority());
                 insertWorkPs.setObject(3, work.getRequirementsScript());
                 insertWorkPs.executeUpdate();
                 
-                deleteWorkTagsPs.setObject(1, work.getCore().getId());
+                deleteWorkTagsPs.setObject(1, work.getId());
                 deleteWorkTagsPs.executeUpdate();
                 for (Entry<String, Object> e : work.getTags().entrySet()) {
-                    insertWorkTagPs.setObject(1, work.getCore().getId());
+                    insertWorkTagPs.setObject(1, work.getId());
                     insertWorkTagPs.setObject(2, e.getKey());
                     switch (e.getKey().substring(0, 2)) { // will always have atleast 2 characters
                         case "b_":
@@ -102,16 +101,16 @@ public final class H2dbWorkDataUtils {
                     insertWorkTagPs.executeUpdate();
                 }
                 
-                deleteWorkParentsPs.setObject(1, work.getCore().getId());
+                deleteWorkParentsPs.setObject(1, work.getId());
                 deleteWorkParentsPs.executeUpdate();
-                for (String depId : work.getCore().getParents()) {
-                    insertWorkParentPs.setObject(1, work.getCore().getId());
+                for (String depId : work.getParents()) {
+                    insertWorkParentPs.setObject(1, work.getId());
                     insertWorkParentPs.setObject(2, depId);
                     insertWorkParentPs.executeUpdate();
                 }
                 
                 deleteWritetimePs.executeUpdate();
-                insertWritetimePs.setObject(1, work.getCore().getPriority());
+                insertWritetimePs.setObject(1, work.getPriority());
                 insertWritetimePs.executeUpdate();
             }
             
@@ -227,8 +226,7 @@ public final class H2dbWorkDataUtils {
             }
 
             try {
-                Core core = new Core(id, priority, parents);
-                Work work = new Work(core, tags, script);
+                Work work = new Work(id, priority, parents, tags, script);
                 return new StoredWork(id, work, state);
             } catch (RuntimeException re) {
                 // the work data is invalid in some form, return null and maybe log

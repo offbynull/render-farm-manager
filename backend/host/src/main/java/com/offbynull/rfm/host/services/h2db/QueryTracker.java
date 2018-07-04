@@ -30,6 +30,10 @@ final class QueryTracker {
         return id;
     }
     
+    public Map<String, Object> params() {
+        return new HashMap<>(paramMapping);
+    }
+    
     public String param(Object data) {
         return param(null, data);
     }
