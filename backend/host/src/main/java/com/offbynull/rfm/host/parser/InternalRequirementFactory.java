@@ -35,16 +35,17 @@ final class InternalRequirementFactory {
     }
 
     public static HostRequirement host(
-            NumberRange numberRange,
+            NumberRange count,
             NumberRange capacityRange,
             Expression whereCondition,
             SocketRequirement[] socketRequirements,
             GpuRequirement[] gpuRequirements,
             RamRequirement[] ramRequirements,
             MountRequirement[] mountRequirements) {
+        Validate.isTrue(count != null, "Host must speecify count");
         Validate.isTrue(capacityRange == null, "No capacity required");
         
-        return new HostRequirement(numberRange, whereCondition,
+        return new HostRequirement(count, whereCondition,
                 asList(socketRequirements),
                 asList(gpuRequirements),
                 asList(ramRequirements),
@@ -52,63 +53,63 @@ final class InternalRequirementFactory {
     }
 
     public static SocketRequirement socket(
-            NumberRange numberRange,
+            NumberRange count,
             NumberRange capacityRange,
             Expression whereCondition,
             CoreRequirement[] coreRequirements) {
         Validate.isTrue(capacityRange == null, "No capacity required");
         
-        return new SocketRequirement(numberRange, whereCondition,
+        return new SocketRequirement(count, whereCondition,
                 asList(coreRequirements));
     }
 
     public static CoreRequirement core(
-            NumberRange numberRange,
+            NumberRange count,
             NumberRange capacityRange,
             Expression whereCondition,
             CpuRequirement[] cpuRequirements) {
         Validate.isTrue(capacityRange == null, "No capacity required");
         
-        return new CoreRequirement(numberRange, whereCondition,
+        return new CoreRequirement(count, whereCondition,
                 asList(cpuRequirements));
     }
 
     public static CpuRequirement cpu(
-            NumberRange numberRange,
+            NumberRange count,
             NumberRange capacityRange,
             Expression whereCondition) {
         Validate.isTrue(capacityRange != null, "Capacity required");
         
-        return new CpuRequirement(numberRange, whereCondition, capacityRange);
+        return new CpuRequirement(count, whereCondition, capacityRange);
     }
 
     public static GpuRequirement gpu(
-            NumberRange numberRange,
+            NumberRange count,
             NumberRange capacityRange,
             Expression whereCondition) {
         
         Validate.isTrue(capacityRange != null, "Capacity required");
         
-        return new GpuRequirement(numberRange, whereCondition, capacityRange);
+        return new GpuRequirement(count, whereCondition, capacityRange);
     }
 
     public static RamRequirement ram(
-            NumberRange numberRange,
+            NumberRange count,
             NumberRange capacityRange,
             Expression whereCondition) {
 
         Validate.isTrue(capacityRange != null, "Capacity required");
 
-        return new RamRequirement(numberRange, whereCondition, capacityRange);
+        return new RamRequirement(count, whereCondition, capacityRange);
     }
 
     public static MountRequirement mount(
-            NumberRange numberRange,
+            NumberRange count,
             NumberRange capacityRange,
             Expression whereCondition) {
 
         Validate.isTrue(capacityRange != null, "Capacity required");
         
-        return new MountRequirement(numberRange, whereCondition, capacityRange);
+        return new MountRequirement(count, whereCondition, capacityRange);
     }
 }

@@ -38,7 +38,7 @@ public final class HostRequirement extends Requirement {
 
     /**
      * Construct a {@link HostRequirement} object.
-     * @param numberRange number range
+     * @param count count
      * @param whereCondition where condition
      * @param socketRequirements CPU socket requirements
      * @param gpuRequirements GPU requirements
@@ -50,16 +50,18 @@ public final class HostRequirement extends Requirement {
      * {@code !gpuRequirements.contains(null)},
      * {@code !ramRequirements.contains(null)},
      * {@code !mountRequirements.contains(null)},
-     * {@code NumberCheckUtils.isAtLeast1(numberRange.getStart())},
-     * {@code NumberCheckUtils.isNonFractional(numberRange.getStart())},
-     * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
+     * {@code NumberCheckUtils.isAtLeast1(count.getStart())},
+     * {@code NumberCheckUtils.isNonFractional(count.getStart())},
+     * {@code NumberCheckUtils.isNonFractional(count.getEnd())}
      */
-    public HostRequirement(NumberRange numberRange, Expression whereCondition,
+    public HostRequirement(NumberRange count, Expression whereCondition,
             List<SocketRequirement> socketRequirements,
             List<GpuRequirement> gpuRequirements,
             List<RamRequirement> ramRequirements,
             List<MountRequirement> mountRequirements) {
-        super(numberRange, whereCondition);
+        super(count, whereCondition);
+        
+        Validate.notNull(count, "Host requirement needs to have a count");
         
         Validate.notNull(socketRequirements);
         Validate.notNull(gpuRequirements);
@@ -70,9 +72,9 @@ public final class HostRequirement extends Requirement {
         Validate.noNullElements(ramRequirements);
         Validate.noNullElements(mountRequirements);
 
-        isAtLeast1(numberRange.getStart());
-        isNonFractional(numberRange.getStart());
-        isNonFractional(numberRange.getEnd());
+        isAtLeast1(count.getStart());
+        isNonFractional(count.getStart());
+        isNonFractional(count.getEnd());
 
         // Don't bother checking stuff like the commented block below. These requirements are intended to be generic host 
         // requirements. They're not nessecarily intended selecting hosts to do work on. For example, if I'm a PST and I want to find all

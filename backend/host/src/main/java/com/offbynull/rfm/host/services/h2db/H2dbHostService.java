@@ -24,6 +24,7 @@ import com.offbynull.rfm.host.service.HostService;
 import com.offbynull.rfm.host.service.StoredWork;
 import com.offbynull.rfm.host.service.StoredWorker;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 import javax.sql.DataSource;
@@ -45,7 +46,12 @@ public class H2dbHostService implements HostService {
 
     @Override
     public void prime() throws IOException {
-        H2dbSetupDataUtils.create(dataSource);
+        try {
+            WorkerPrimer.prime(dataSource);
+            WorkPrimer.prime(dataSource);
+        } catch (SQLException sqle) {
+            throw new IOException(sqle);
+        }
     }
 
     @Override

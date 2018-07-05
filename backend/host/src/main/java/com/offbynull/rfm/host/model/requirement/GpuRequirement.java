@@ -32,26 +32,28 @@ public final class GpuRequirement extends Requirement implements CapacityEnabled
     
     /**
      * Construct a {@link GpuRequirement} object.
-     * @param numberRange number range
+     * @param count count
      * @param whereCondition where condition
      * @param capacityRange available range
-     * @throws NullPointerException if any argument is {@code null}
+     * @throws NullPointerException if any argument other than {@code count} is {@code null}
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
-     * {@code NumberCheckUtils.isAtLeast0(numberRange.getStart())},
-     * {@code NumberCheckUtils.isAtMost1(numberRange.getEnd())},
-     * {@code NumberCheckUtils.isNonFractional(numberRange.getStart())},
-     * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
+     * {@code count != null && NumberCheckUtils.isAtLeast0(count.getStart())},
+     * {@code count != null && NumberCheckUtils.isAtMost1(count.getEnd())},
+     * {@code count != null && NumberCheckUtils.isNonFractional(count.getStart())},
+     * {@code count != null && NumberCheckUtils.isNonFractional(count.getEnd())}
      */
-    public GpuRequirement(NumberRange numberRange, Expression whereCondition,
+    public GpuRequirement(NumberRange count, Expression whereCondition,
             NumberRange capacityRange) {
-        super(numberRange, whereCondition);
+        super(count, whereCondition);
         
         Validate.notNull(capacityRange);
         
-        isAtLeast0(numberRange.getStart());
-        isAtMost1(numberRange.getEnd());
-        isNonFractional(numberRange.getStart());
-        isNonFractional(numberRange.getEnd());
+        if (count != null) {
+            isAtLeast0(count.getStart());
+            isAtMost1(count.getEnd());
+            isNonFractional(count.getStart());
+            isNonFractional(count.getEnd());
+        }
         
         this.capacityRange = capacityRange;
     }

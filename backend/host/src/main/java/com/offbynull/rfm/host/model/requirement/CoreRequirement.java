@@ -35,26 +35,28 @@ public final class CoreRequirement extends Requirement {
     
     /**
      * Construct a {@link CoreRequirement} object.
-     * @param numberRange number range
+     * @param count count
      * @param whereCondition where condition
      * @param cpuRequirements CPU requirements
-     * @throws NullPointerException if any argument is {@code null}
+     * @throws NullPointerException if any argument other than {@code count} is {@code null}
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
      * {@code !cpuRequirements.contains(null)},
-     * {@code NumberCheckUtils.isAtLeast1(numberRange.getStart())},
-     * {@code NumberCheckUtils.isNonFractional(numberRange.getStart())},
-     * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
+     * {@code count != null && NumberCheckUtils.isAtLeast1(count.getStart())},
+     * {@code count != null && NumberCheckUtils.isNonFractional(count.getStart())},
+     * {@code count != null && NumberCheckUtils.isNonFractional(count.getEnd())}
      */
-    public CoreRequirement(NumberRange numberRange, Expression whereCondition,
+    public CoreRequirement(NumberRange count, Expression whereCondition,
             List<CpuRequirement> cpuRequirements) {
-        super(numberRange, whereCondition);
+        super(count, whereCondition);
         
         Validate.notNull(cpuRequirements);
         Validate.noNullElements(cpuRequirements);
 
-        isAtLeast1(numberRange.getStart());
-        isNonFractional(numberRange.getStart());
-        isNonFractional(numberRange.getEnd());
+        if (count != null) {
+            isAtLeast1(count.getStart());
+            isNonFractional(count.getStart());
+            isNonFractional(count.getEnd());
+        }
         
         this.cpuRequirements = (UnmodifiableList<CpuRequirement>) unmodifiableList(new ArrayList<>(cpuRequirements));
     }

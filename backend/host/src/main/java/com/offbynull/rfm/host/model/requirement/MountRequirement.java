@@ -31,24 +31,26 @@ public final class MountRequirement extends Requirement implements CapacityEnabl
     
     /**
      * Construct a {@link MountRequirement} object.
-     * @param numberRange number range
+     * @param count count
      * @param whereCondition where condition
      * @param capacityRange capacity range (in bytes)
-     * @throws NullPointerException if any argument is {@code null}
+     * @throws NullPointerException if any argument other than {@code count} is {@code null}
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
-     * {@code NumberCheckUtils.isAtLeast1(numberRange.getStart())},
-     * {@code NumberCheckUtils.isNonFractional(numberRange.getStart())},
-     * {@code NumberCheckUtils.isNonFractional(numberRange.getEnd())}
+     * {@code count != null && NumberCheckUtils.isAtLeast1(count.getStart())},
+     * {@code count != null && NumberCheckUtils.isNonFractional(count.getStart())},
+     * {@code count != null && NumberCheckUtils.isNonFractional(count.getEnd())}
      */
-    public MountRequirement(NumberRange numberRange, Expression whereCondition,
+    public MountRequirement(NumberRange count, Expression whereCondition,
             NumberRange capacityRange) {
-        super(numberRange, whereCondition);
+        super(count, whereCondition);
 
         Validate.notNull(capacityRange);
         
-        isAtLeast1(numberRange.getStart());
-        isNonFractional(numberRange.getStart());
-        isNonFractional(numberRange.getEnd());
+        if (count != null) {
+            isAtLeast1(count.getStart());
+            isNonFractional(count.getStart());
+            isNonFractional(count.getEnd());
+        }
         
         this.capacityRange = capacityRange;
     }

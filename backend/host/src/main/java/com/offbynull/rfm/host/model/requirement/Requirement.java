@@ -25,21 +25,21 @@ import org.apache.commons.lang3.Validate;
  * @author Kasra Faghihi
  */
 public abstract class Requirement {
-    private final NumberRange numberRange;
+    private final NumberRange count;
     private final Expression whereCondition;
 
-    Requirement(NumberRange numberRange, Expression whereCondition) {
-        Validate.notNull(numberRange);
+    Requirement(NumberRange count, Expression whereCondition) {
+        // count CAN be null. See comments in getCount()
         Validate.notNull(whereCondition);
 
         Validate.isTrue(BOOLEAN == whereCondition.getType());
 
-        this.numberRange = numberRange;
+        this.count = count;
         this.whereCondition = whereCondition;
     }
 
     /**
-     * Get number range.
+     * Get count.
      * <p>
      * If this is NOT {@code null}, it means the children of this requirement are replicated for each parent requirement found. For example,
      * imagine the following requirement hierarchy...
@@ -48,21 +48,21 @@ public abstract class Requirement {
      *   [3,6] child
      * }
      * </pre>
-     * 1 to 5 parents will be returned. For each parent found, that parent will have anywhere from 3 to 6 children that are guaranteed to be
-     * owned by that parent.
+     * It means anywhere from 1 to 5 parents will be returned. For each parent found, that parent will have anywhere from 3 to 6 children
+     * -- those children are guaranteed to be owned by that parent.
      * <p>
      * If this is {@code null}, it means the children of this requirement are spread across one or more parents. For example, image the
-     * following requirement hiearachy...
+     * following requirement hierarchy...
      * <pre>
      * ? parent {
      *   [3,6] child
      * }
      * </pre>
-     * 3 to 6 children will be found, but each what parent they're bound to is unknown.
+     * 3 to 6 children will be found (in total), but there is no guarantee which parent owns which child.
      * @return number range
      */
-    public NumberRange getNumberRange() {
-        return numberRange;
+    public NumberRange getCount() {
+        return count;
     }
     
     /**

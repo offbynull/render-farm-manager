@@ -122,15 +122,15 @@ public class ParserTest {
         
         List<SocketRequirement> socketReqs = req.getSocketRequirements();
         assertEquals(1, socketReqs.size());
-        assertRange(3L, 40L, socketReqs.get(0).getNumberRange());
+        assertRange(3L, 40L, socketReqs.get(0).getCount());
         assertEquals(InvocationExpression.class, socketReqs.get(0).getWhereCondition().getClass());
         List<CoreRequirement> coreReqs = socketReqs.get(0).getCoreRequirements();
         assertEquals(1, coreReqs.size());
-        assertRange(1L, 9999L, coreReqs.get(0).getNumberRange());
+        assertRange(1L, 9999L, coreReqs.get(0).getCount());
         assertEquals(InvocationExpression.class, coreReqs.get(0).getWhereCondition().getClass());
         List<CpuRequirement> cpuReqs = coreReqs.get(0).getCpuRequirements();
         assertEquals(1, cpuReqs.size());
-        assertRange(2L, 2L, cpuReqs.get(0).getNumberRange());
+        assertRange(2L, 2L, cpuReqs.get(0).getCount());
         assertEquals(BooleanLiteralExpression.class, cpuReqs.get(0).getWhereCondition().getClass());
         CapacityRequirement sliceReq = cpuReqs.get(0).getCapacityRequirement();
         assertRange(100000L, 100000L, sliceReq.getNumberRange());
@@ -138,12 +138,12 @@ public class ParserTest {
         
         List<GpuRequirement> gpuReqs = req.getGpuRequirements();
         assertEquals(1, gpuReqs.size());
-        assertRange(1L, 5L, gpuReqs.get(0).getNumberRange());
+        assertRange(1L, 5L, gpuReqs.get(0).getCount());
         assertEquals(InvocationExpression.class, gpuReqs.get(0).getWhereCondition().getClass());
         
         List<RamRequirement> ramReqs = req.getRamRequirements();
         assertEquals(1, ramReqs.size());
-        assertRange(1L, 1L, ramReqs.get(0).getNumberRange());
+        assertRange(1L, 1L, ramReqs.get(0).getCount());
         assertEquals(InvocationExpression.class, ramReqs.get(0).getWhereCondition().getClass());
         CapacityRequirement ramCapReq = ramReqs.get(0).getCapacityRequirement();
         assertRange(4294967296L, 9663676416L, ramCapReq.getNumberRange());
@@ -151,7 +151,7 @@ public class ParserTest {
         
         List<MountRequirement> mountReqs = req.getMountRequirements();
         assertEquals(1, mountReqs.size());
-        assertRange(1L, 1L, mountReqs.get(0).getNumberRange());
+        assertRange(1L, 1L, mountReqs.get(0).getCount());
         assertEquals(InvocationExpression.class, mountReqs.get(0).getWhereCondition().getClass());
         CapacityRequirement mountCapReq = mountReqs.get(0).getCapacityRequirement();
         assertRange(10737418240L, 42949672960L, mountCapReq.getNumberRange());
@@ -320,15 +320,15 @@ public class ParserTest {
         
         assertEquals(1,  hostReq.getSocketRequirements().size());
         SocketRequirement socketReq = hostReq.getSocketRequirements().get(0);
-        assertRange(1, 9999, socketReq.getNumberRange());
+        assertRange(1, 9999, socketReq.getCount());
 
         assertEquals(1, socketReq.getCoreRequirements().size());
         CoreRequirement coreReq = socketReq.getCoreRequirements().get(0);
-        assertRange(1, 9999, coreReq.getNumberRange());
+        assertRange(1, 9999, coreReq.getCount());
 
         assertEquals(1, coreReq.getCpuRequirements().size());
         CpuRequirement cpuReq = coreReq.getCpuRequirements().get(0);
-        assertRange(1, 9999, cpuReq.getNumberRange());
+        assertRange(1, 9999, cpuReq.getCount());
 
         CapacityRequirement sliceReq = cpuReq.getCapacityRequirement();
         assertRange(100000, 100000, sliceReq.getNumberRange());
@@ -360,7 +360,7 @@ public class ParserTest {
 
         assertEquals(1, hostReq.getMountRequirements().size());
         MountRequirement mountReq = hostReq.getMountRequirements().get(0);
-        assertRange(2, 2, mountReq.getNumberRange());
+        assertRange(2, 2, mountReq.getCount());
 
         CapacityRequirement capacityReq = mountReq.getCapacityRequirement();
         assertRange(10737418240L, 10737418240L, capacityReq.getNumberRange());

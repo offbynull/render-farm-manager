@@ -133,11 +133,21 @@ public final class Parser {
         EvalParser parser = initParser(input);
         ParserEvalVisitor visitor = new ParserEvalVisitor(requirementFunctions, tagFunctions);
         
+        visitor.populateTagCache(tags);
+        
         try {
-            visitor.populateTagCache(tags);
             return (HostRequirement) visitor.visit(parser.reqEntry());
-        } catch (Exception e) {
-            throw new IllegalArgumentException(e.getMessage(), e);
+        } catch (ParseCancellationException pce) { // throws by BailErrorStrategy
+            RecognitionException re = (RecognitionException) pce.getCause();
+            throw new IllegalArgumentException(
+                    format("Parser syntax error: token [%s] but expected one of [%s] (line %d pos %d)",
+                            re.getOffendingToken() == null ? "" : VOCABULARY.getDisplayName(re.getOffendingToken().getType()),
+                            re.getExpectedTokens().toList().stream().map(i -> VOCABULARY.getDisplayName(i)).collect(joining(",")),
+                            re.getOffendingToken().getLine(),
+                            re.getOffendingToken().getCharPositionInLine()),
+                    re);
+        } catch (ParserEvalException e) {
+            throw new IllegalArgumentException("Parser semantic error: " + e.toString(), e);
         }
     }
 
