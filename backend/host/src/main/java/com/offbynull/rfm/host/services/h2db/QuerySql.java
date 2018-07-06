@@ -116,7 +116,7 @@ final class QuerySql {
 
                 collectVariableNames(finalWhere, name, props);
 
-                String id = qt.next();
+                String id = qt.alias();
                 String qr = selectFlattenedProperties(qt, name, dbKey, props);
 
                 key.stream().map(f -> id + "." + f + " AS " + name + "_" + f).forEachOrdered(id1SelectFields::add);
@@ -164,9 +164,9 @@ final class QuerySql {
             Expression finalWhere = finalRequirement.getWhereCondition();
             
             
-            String id1 = qt.next();
-            String id2 = qt.next();
-            String id3 = qt.next();
+            String id1 = qt.alias();
+            String id2 = qt.alias();
+            String id3 = qt.alias();
             Set<String> id1SelectFields = new LinkedHashSet<>();
             Set<String> id2SelectFields = new LinkedHashSet<>();
             Set<String> id3SelectFields = new LinkedHashSet<>();
@@ -212,7 +212,7 @@ final class QuerySql {
     public static String selectFlattenedProperties(QueryTracker qt, String spec, Collection<String> pkCols, Collection<String> names) {
         qt.enter();
         try {
-            String fullId = qt.next();
+            String fullId = qt.alias();
             String fullQuery = "SELECT DISTINCT " + pkCols.stream().collect(joining(",")) + ",name" + " FROM " + spec + "_props";
             
             LinkedHashMap<String, String> valCols = new LinkedHashMap<>();
@@ -222,7 +222,7 @@ final class QuerySql {
                     + "\n) " + fullId; 
             
             for (String name : names) {
-                String nextId = qt.next();
+                String nextId = qt.alias();
                 String nextQuery = selectByProperty(qt, spec, pkCols, name);
                 
                 valCols.put(nextId + ".val", name);
@@ -267,18 +267,18 @@ final class QuerySql {
                     throw new IllegalArgumentException();
             }
             
-            String id1 = qt.next();
+            String id1 = qt.alias();
             String qr1 = "  "
                     + "SELECT DISTINCT " + pkCols.stream().collect(joining(",")) + ",name"
                     + " FROM " + spec + "_props";
 
-            String id2 = qt.next();
+            String id2 = qt.alias();
             String qr2 = "  "
                     + "SELECT " + pkCols.stream().collect(joining(",")) + ",name," + col
                     + " FROM " + spec + "_props"
                     + " WHERE name='" + name + "'";
             
-            String id3 = qt.next();
+            String id3 = qt.alias();
             String qr3 = ""
                     + "SELECT " + pkCols.stream().map(x -> id1 + "." + x).collect(joining(",")) + ",name," + id2 + "." + col + " AS val\n"
                     + "FROM\n"
@@ -322,24 +322,121 @@ final class QuerySql {
     
     
     
-    static String filterByCountAndCapacity(
-            QueryTracker qt,
+    static Query filterHostsByCountAndCapacity(
             Map<String, BigDecimal> minCounts,
             Map<String, BigDecimal> minCapacities) {
+        QueryTracker qt = new QueryTracker();
+        
+        String id1 = qt.alias();
+        List<String> whereChain1 = Stream
+                .concat(
+                        minCounts.entrySet().stream().map(e -> e.getKey() + "_count=" + qt.param(e.getKey(), e.getValue())),
+                        minCapacities.entrySet().stream().map(e -> e.getKey() + "_capacity_sum=" + qt.param(e.getKey(), e.getValue()))
+                )
+                .collect(toList());
+        String qr1 = "SELECT s_host, n_port\n"
+                + "FROM worker " + id1 + "\n"
+                + "WHERE " + whereChain1.stream().collect(joining(" AND "));
+
+        return new Query(qr1, qt.params());
+    }
+    
+    static String filterHostsByExpression(
+            QueryTracker qt,
+            String hostQuery, // subquery that returns a set of (s_host,n_port)
+            List<Requirement> parentChain,
+            List<Requirement> children) {
+        Validate.notNull(qt);
+        Validate.notNull(hostQuery);
+        Validate.notNull(parentChain);
+        Validate.notNull(children);
+        Validate.isTrue(!parentChain.isEmpty());
+        Validate.isTrue(parentChain.get(0) instanceof HostRequirement);
+        Validate.isTrue(!children.isEmpty());
+        Validate.isTrue(children.stream().map(x -> x.getClass()).distinct().count() == 1L);
+        
+        readAllRequirements(qt, )
+        
+        // iterate through each parent and collect variable names
+        // iterate through children and collect variable names
+        // select all children that contain these variable names -- parent variables can be referenced as well, so join with parent chain
+    }
+    
+    public static String performEvaluations(
+            QueryTracker qt,
+            String hostQuery,
+            List<Requirement> parentChain,
+            List<Requirement> children) {
+        Validate.notNull(qt);
+        Validate.notNull(hostQuery);
+        Validate.notNull(parentChain);
+        Validate.notNull(children);
+        Validate.noNullElements(parentChain);
+        Validate.noNullElements(children);
+        Validate.isTrue(!children.isEmpty());
+        Validate.isTrue(children.stream().map(x -> x.getClass()).distinct().count() == 1L);
+        
         qt.enter();
         try {
-            String id1 = qt.next();
-            List<String> whereChain1 = Stream
-                    .concat(
-                            minCounts.entrySet().stream().map(e -> e.getKey() + "_count=" + qt.param(e.getKey(), e.getValue())),
-                            minCapacities.entrySet().stream().map(e -> e.getKey() + "_capacity_sum=" + qt.param(e.getKey(), e.getValue()))
-                    )
-                    .collect(toList());
-            String qr1 = "SELECT s_host, n_port\n"
-                    + "FROM worker " + id1 + "\n"
-                    + "WHERE " + whereChain1.stream().collect(joining(" AND "));
+            List<Expression> finalWheres = children.stream().map(x -> x.getWhereCondition()).collect(toList());
+            
+            
+            Set<String> id1SelectFields = new LinkedHashSet<>();
+            Set<String> id2SelectFields = new LinkedHashSet<>();
+            
+            Set<String> lastDbKey = null;
+            String lastId = null;
+            String joinChain = "";
+            
 
-            return qt.indentLines(qr1);
+            for (Requirement localRequirement : requirementChain) {
+                String name = getRequirementName(localRequirement);
+
+                Set<String> key = getRequirementKey(localRequirement);
+                Set<String> props = new HashSet<>();
+
+                int idxInRequirementChain = requirementChain.indexOf(localRequirement);
+                List<Requirement> localRequirementChain = requirementChain.subList(0, idxInRequirementChain + 1);
+                Set<String> dbKey = getRequirementFullKey(localRequirementChain);
+
+                collectVariableNames(finalWhere, name, props);
+
+                String id = qt.alias();
+                String qr = selectFlattenedProperties(qt, name, dbKey, props);
+
+                key.stream().map(f -> id + "." + f + " AS " + name + "_" + f).forEachOrdered(id1SelectFields::add);
+                props.stream().map(f -> id + "." + f + " AS " + name + "_" + f).forEachOrdered(id1SelectFields::add);
+
+                key.stream().map(f -> name + "_" + f).forEachOrdered(id2SelectFields::add);
+
+                if (lastId == null) {
+                    joinChain += ""
+                            + "(\n"
+                            + qt.indentLines(1, qr)
+                            + "\n) " + id + "\n";
+                } else {
+                    final String _lastId = lastId; // must be assigned to new final var becuase of use in lambda
+                    joinChain += ""
+                            + "RIGHT JOIN\n"
+                            + "(\n"
+                            + qt.indentLines(1, qr)
+                            + "\n) " + id + "\n"
+                            + "ON " + lastDbKey.stream().map(k -> _lastId + "." + k + "=" + id + "." + k).collect(joining(" AND "))
+                            + "\n";
+                }
+
+                lastId = id;
+                lastDbKey = dbKey;
+            }
+            
+            
+            String qr1 = ""
+                    + "SELECT "
+                    + id1SelectFields.stream().collect(joining(",")) + "\n"
+                    + "FROM\n"
+                    + joinChain;
+            
+            return qr1;
         } finally {
             qt.exit();
         }
@@ -371,31 +468,7 @@ final class QuerySql {
     
     
     
-    
-    
-    
-    private static Set<String> getDbKey(List<Requirement> requirementChain, Requirement requirement) {
-        requirementChain = requirementChain.subList(0, requirementChain.indexOf(requirement)+1);
-        LinkedHashSet<String> ret = new LinkedHashSet<>();
-        
-        for (Requirement req : requirementChain) {
-            Set<String> key = getRequirementKey(req);
-            ret.addAll(key);
-        }
-        
-        return ret;
-    }
 
-    private static Set<String> getDbKey(List<Requirement> requirementChain) {
-        LinkedHashSet<String> ret = new LinkedHashSet<>();
-        
-        for (Requirement req : requirementChain) {
-            Set<String> key = getRequirementKey(req);
-            ret.addAll(key);
-        }
-        
-        return ret;
-    }
     
 
 

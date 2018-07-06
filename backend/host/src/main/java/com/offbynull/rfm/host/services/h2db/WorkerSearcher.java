@@ -43,7 +43,7 @@ final class WorkerSearcher {
         
         QueryTracker qt = new QueryTracker();
         String val;
-        val = QuerySql.filterByCountAndCapacity(qt, minCounts, minCapacities);
+        val = QuerySql.filterHostsByCountAndCapacity(qt, minCounts, minCapacities);
         val = QuerySql.filterByWhereCondition(qt, val, List.of(hr));
         
         System.out.println(val);
