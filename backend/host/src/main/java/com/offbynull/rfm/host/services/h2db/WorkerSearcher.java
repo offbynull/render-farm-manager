@@ -6,7 +6,6 @@ import com.offbynull.rfm.host.model.requirement.Requirement;
 import com.offbynull.rfm.host.parser.Parser;
 import static com.offbynull.rfm.host.services.h2db.InternalUtils.getRequirementChildren;
 import static com.offbynull.rfm.host.services.h2db.InternalUtils.getRequirementName;
-import com.sun.tools.javac.util.List;
 import java.math.BigDecimal;
 import static java.math.BigDecimal.ONE;
 import static java.util.Collections.EMPTY_LIST;
@@ -26,14 +25,14 @@ final class WorkerSearcher {
         HostRequirement hr = parser.parseScriptReqs(EMPTY_MAP, ""
                 + "[1,5] host {"
                 + "  1 socket where socket.s_brand==\"intel\" {"
-                + "    ? core where !core.b_hyperthread {"
-                + "      [2,999999] cpu with 50000 capacity where cpu.b_avx==true && socket.s_model==\"xeon\" { }"
-                + "      1 cpu with 5000 capacity where socket.s_model==\"haswell\" { }"
+                + "    2 core where !core.b_hyperthread {"
+                + "      [2,999999] cpu 100000 capacity where cpu.b_avx==true && socket.s_model==\"xeon\" { }"
+                + "      1 cpu 5000 capacity where socket.s_model==\"haswell\" { }"
                 + "    }"
                 + "  }"
                 + "  1 gpu with 1 capacity { }"
-                + "  1 mount with 256gb capacity where mount.b_rotational==true { }" // for saving work
-                + "  1 mount with 32gb capacity where mount.b_rotational==false { }" // for temp storage
+                + "  1 mount with 256gb capacity where b_rotational==true" // for saving work
+                + "  1 mount with 32gb capacity where b_rotational=false" // for temp storage
                 + "  1 ram with 64gb capacity where ram.n_speed>=3000 && ram.s_brand==\"samsung\" { }"
                 + "}");
         
@@ -43,8 +42,7 @@ final class WorkerSearcher {
         
         QueryTracker qt = new QueryTracker();
         String val;
-        val = QuerySql.filterHostsByCountAndCapacity(qt, minCounts, minCapacities);
-        val = QuerySql.filterByWhereCondition(qt, val, List.of(hr));
+        val = WorkerSearcherSql.filterCondition(requirementChain, minCounts, minCapacities)
         
         System.out.println(val);
     }

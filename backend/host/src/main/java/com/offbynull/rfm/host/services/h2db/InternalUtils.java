@@ -2,10 +2,13 @@ package com.offbynull.rfm.host.services.h2db;
 
 import com.offbynull.rfm.host.model.requirement.Requirement;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import static java.util.Arrays.stream;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.collections4.ListUtils.union;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.list.UnmodifiableList;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
@@ -72,6 +75,29 @@ final class InternalUtils {
         return ret;
     }
     
+    static Set<String> getRequirementFullKeyFromClasses(List<Class<? extends Requirement>> requirementChain) {
+        LinkedHashSet<String> ret = new LinkedHashSet<>();
+        
+        for (Class<? extends Requirement> req : requirementChain) {
+            Set<String> key = getRequirementKey(req);
+            ret.addAll(key);
+        }
+        
+        return ret;
+    }
+    
+    static List<Requirement> localizeChain(List<? extends Requirement> requirementChain, Requirement requirement) {
+        int idxInRequirementChain = requirementChain.indexOf(requirement);
+        List<? extends Requirement> localRequirementChain = requirementChain.subList(0, idxInRequirementChain + 1);
+        return new ArrayList<>(localRequirementChain);
+    }
+    
+    static List<Class<? extends Requirement>> toClasses(List<Requirement> requirementChain) {
+        return requirementChain.stream()
+                .map(x -> x.getClass())
+                .collect(toList());
+    }
+    
     static MultiValuedMap<String, Requirement> getRequirementChildren(Requirement requirement) {
         ArrayListValuedHashMap<String, Requirement> childRequirements = stream(requirement.getClass().getMethods())
                 .filter(m -> m.getName().startsWith("get") && m.getName().endsWith("Requirements"))
@@ -94,6 +120,27 @@ final class InternalUtils {
             return childRequirements;
         } catch (IllegalArgumentException | ReflectiveOperationException ex) {
             throw new IllegalStateException(ex); // should never happen
+        }
+    }
+    
+    static List<List<? extends Requirement>> flattenRequirementHierarchy(Requirement requirement) {
+        List<List<? extends Requirement>> collection = new ArrayList<>();
+        List<? extends Requirement> parentRequirementChain = List.of();
+        
+        flattenRequirementHierarchy(collection, parentRequirementChain, requirement);
+        
+        return collection;
+    }
+            
+    private static void flattenRequirementHierarchy(
+            List<List<? extends Requirement>> collection,
+            List<? extends Requirement> parentRequirementChain,
+            Requirement requirement) {
+        List<? extends Requirement> requirementChain = union(parentRequirementChain, List.of(requirement));
+        collection.add(requirementChain);
+        
+        for (Requirement childRequirement : getRequirementChildren(requirement).values()) {
+            flattenRequirementHierarchy(collection, requirementChain, childRequirement);
         }
     }
 }
