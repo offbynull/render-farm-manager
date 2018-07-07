@@ -29,15 +29,18 @@ final class WorkerSearcher {
                 + "[1,5] host {"
                 + "  1 socket where socket.s_brand==\"intel\" {"
                 + "    2 core where !core.b_hyperthread {"
-                + "      [2,999999] cpu 100000 capacity where cpu.b_avx==true && socket.s_model==\"xeon\" { }"
-                + "      1 cpu 5000 capacity where socket.s_model==\"haswell\" { }"
+                + "      [2,999999] cpu with 100000 capacity where cpu.b_avx==true && socket.s_model==\"xeon\" { }"
+                + "      1 cpu with 5000 capacity where socket.s_model==\"haswell\" { }"
                 + "    }"
                 + "  }"
                 + "  1 gpu with 1 capacity { }"
-                + "  1 mount with 256gb capacity where b_rotational==true" // for saving work
-                + "  1 mount with 32gb capacity where b_rotational=false" // for temp storage
+                + "  1 mount with 256gb capacity where mount.b_rotational==true" // for saving work
+                + "  1 mount with 32gb capacity where mount.b_rotational==false" // for temp storage
                 + "  1 ram with 64gb capacity where ram.n_speed>=3000 && ram.s_brand==\"samsung\" { }"
                 + "}");
+        
+        Query qr = generateQuery(hr);
+        System.out.println(qr.toJdbcQuery());
     }
     
     private static Query generateQuery(HostRequirement hostRequirement) {

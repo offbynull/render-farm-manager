@@ -758,30 +758,44 @@ final class ParserEvalVisitor extends EvalBaseVisitor<Object> {
         List<String> varChain = ctx.ID().stream()
                 .map(x -> x.getText())
                 .collect(toList());
-        
-        String varScope = varChain.get(0);
 
-        String varName = varChain.get(1);
-        isCorrectVarName(ctx, varName);
-        
-        if (varScope == null) { // no scope? it's a tag -- grab the tag value and return it as a literal
-            Object val = tagCache.get(varName);
-            parseIsTrue(ctx, val != null, "Variables referenced in tags must reference other tags -- no previously defined tag found");
+        Expression ret;
+        switch (varChain.size()) {
+            case 0: // empty?
+                throw new IllegalStateException(); // not possible -- sanity check
+            case 1: { // no scope? it's a tag -- grab the tag value and return it as a literal
+                String tagName = varChain.get(0);
 
-            if (val instanceof Boolean) {
-                return new BooleanLiteralExpression((Boolean) val);
-            } else if (val instanceof Number) {
-                return new NumberLiteralExpression((BigDecimal) val);
-            } else if (val instanceof String) {
-                return new StringLiteralExpression((String) val);
+                Object val = tagCache.get(tagName);
+                parseIsTrue(ctx, val != null, "Variables referenced in tags must reference other tags -- no previously defined tag found");
+
+                if (val instanceof Boolean) {
+                    ret = new BooleanLiteralExpression((Boolean) val);
+                } else if (val instanceof Number) {
+                    ret = new NumberLiteralExpression((BigDecimal) val);
+                } else if (val instanceof String) {
+                    ret = new StringLiteralExpression((String) val);
+                } else {
+                    throw new IllegalStateException(); // should never happen?
+                }
+                
+                break;
             }
+            case 2: { // yes scope? it's referencing the req or one of its parents -- return it as a variable expr
+                String varScope = varChain.get(0);
+                String varName = varChain.get(1);
+                
+                parseIsTrue(ctx, reqScope.contains(varScope), "Scope not available: %s vs %s", varScope, reqScope.toString());
 
-            throw new IllegalStateException(); // should never happen?
-        } else { // yes scope? it's referencing the req or one of its parents -- return it as a variable expr
-            parseIsTrue(ctx, reqScope.contains(varScope), "Scope not available: %s vs %s", varScope, reqScope.toString());
-
-            return new VariableExpression(varScope, varName); 
+                ret = new VariableExpression(varScope, varName);
+                
+                break;
+            }
+            default:
+                throw new ParserEvalException(ctx, "Too highly scoped");
         }
+        
+        return ret;
     }
     
     
