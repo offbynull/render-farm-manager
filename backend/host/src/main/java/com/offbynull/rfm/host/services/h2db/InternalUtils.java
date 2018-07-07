@@ -12,6 +12,7 @@ import static org.apache.commons.collections4.ListUtils.union;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.list.UnmodifiableList;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.ClassUtils;
 import static org.apache.commons.lang3.StringUtils.removeEnd;
 import static org.apache.commons.lang3.StringUtils.removeStart;
@@ -86,9 +87,9 @@ final class InternalUtils {
         return ret;
     }
     
-    static List<Requirement> localizeChain(List<? extends Requirement> requirementChain, Requirement requirement) {
+    static List<Requirement> localizeChain(List<Requirement> requirementChain, Requirement requirement) {
         int idxInRequirementChain = requirementChain.indexOf(requirement);
-        List<? extends Requirement> localRequirementChain = requirementChain.subList(0, idxInRequirementChain + 1);
+        List<Requirement> localRequirementChain = requirementChain.subList(0, idxInRequirementChain + 1);
         return new ArrayList<>(localRequirementChain);
     }
     
@@ -110,9 +111,9 @@ final class InternalUtils {
         return childRequirements;
     }
     
-    static UnmodifiableList<? extends Requirement> invokeRequirementGetter(Method method, Requirement object) {
+    static UnmodifiableList<Requirement> invokeRequirementGetter(Method method, Requirement object) {
         try {
-            UnmodifiableList<? extends Requirement> childRequirements = (UnmodifiableList<? extends Requirement>) method.invoke(object);
+            UnmodifiableList<Requirement> childRequirements = (UnmodifiableList<Requirement>) method.invoke(object);
             
             long typesReturnedByMethod = childRequirements.stream().map(cr -> cr.getClass()).distinct().count();
             Validate.validState(typesReturnedByMethod == 1L);
@@ -123,9 +124,22 @@ final class InternalUtils {
         }
     }
     
-    static List<List<? extends Requirement>> flattenRequirementHierarchy(Requirement requirement) {
-        List<List<? extends Requirement>> collection = new ArrayList<>();
-        List<? extends Requirement> parentRequirementChain = List.of();
+    static MultiValuedMap<Requirement, Requirement> getRequirementHierarchy(Requirement requirement) {
+        MultiValuedMap<Requirement, Requirement> ret = new HashSetValuedHashMap<>();
+        getRequirementHierarchy(ret, requirement);
+        return ret;
+    }
+    
+    private static void getRequirementHierarchy(MultiValuedMap<Requirement, Requirement> collection, Requirement requirement) {
+        for (Requirement childRequirement : getRequirementChildren(requirement).values()) {
+            collection.put(requirement, childRequirement);
+            getRequirementHierarchy(collection, childRequirement);
+        }
+    }
+    
+    static List<List<Requirement>> flattenRequirementHierarchy(Requirement requirement) {
+        List<List<Requirement>> collection = new ArrayList<>();
+        List<Requirement> parentRequirementChain = List.of();
         
         flattenRequirementHierarchy(collection, parentRequirementChain, requirement);
         
@@ -133,10 +147,10 @@ final class InternalUtils {
     }
             
     private static void flattenRequirementHierarchy(
-            List<List<? extends Requirement>> collection,
-            List<? extends Requirement> parentRequirementChain,
+            List<List<Requirement>> collection,
+            List<Requirement> parentRequirementChain,
             Requirement requirement) {
-        List<? extends Requirement> requirementChain = union(parentRequirementChain, List.of(requirement));
+        List<Requirement> requirementChain = union(parentRequirementChain, List.of(requirement));
         collection.add(requirementChain);
         
         for (Requirement childRequirement : getRequirementChildren(requirement).values()) {

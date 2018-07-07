@@ -6,8 +6,9 @@ import com.offbynull.rfm.host.model.expression.LiteralExpression;
 import com.offbynull.rfm.host.model.expression.RequirementFunction;
 import com.offbynull.rfm.host.model.expression.RequirementFunctionBuiltIns;
 import com.offbynull.rfm.host.model.expression.VariableExpression;
+import com.offbynull.rfm.host.model.requirement.CapacityEnabledRequirement;
 import com.offbynull.rfm.host.model.requirement.Requirement;
-import static com.offbynull.rfm.host.services.h2db.InternalUtils.flattenRequirementHierarchy;
+import static com.offbynull.rfm.host.services.h2db.InternalUtils.getRequirementChildren;
 import static com.offbynull.rfm.host.services.h2db.InternalUtils.getRequirementFullKeyFromClasses;
 import static com.offbynull.rfm.host.services.h2db.InternalUtils.getRequirementName;
 import java.math.BigDecimal;
@@ -26,66 +27,16 @@ import org.apache.commons.lang3.Validate;
 import static com.offbynull.rfm.host.services.h2db.InternalUtils.getRequirementKey;
 import static com.offbynull.rfm.host.services.h2db.InternalUtils.localizeChain;
 import static com.offbynull.rfm.host.services.h2db.InternalUtils.toClasses;
+import static java.math.BigDecimal.ONE;
+import java.util.HashMap;
+import org.apache.commons.collections4.MultiValuedMap;
 
 final class WorkerSearcherSql {
     private WorkerSearcherSql() {
         // do nothing
     }
     
-    public static Query filter(
-            Requirement requirement,
-            Map<String, BigDecimal> minCounts,
-            Map<String, BigDecimal> minCapacities) {
-        Validate.notNull(requirement);
-        Validate.notNull(minCounts);
-        Validate.notNull(minCapacities);
-        Validate.noNullElements(minCounts.keySet());
-        Validate.noNullElements(minCounts.values());
-        Validate.noNullElements(minCapacities.keySet());
-        Validate.noNullElements(minCapacities.values());
-        
-        Requirement firstRequirement = requirement;
-        Set<String> firstKey = getRequirementKey(firstRequirement);
-        
-        QueryTracker qt = new QueryTracker();
-        
-        String joinChain;
-        
-        String nextId = qt.alias();
-        Query nextQuery = filterHostsByCountAndCapacity(minCounts, minCapacities);
-        joinChain = ""
-                + "(\n"
-                + nextQuery.compose(2, qt)
-                + "\n) " + nextId;
-        
-        for (List<? extends Requirement> requirementChain : flattenRequirementHierarchy(requirement)) {
-            String lastId = nextId;
-            String _nextId = qt.alias(); // hack so nextId can be used in lambda below (can't assign to nextId directly)
-            
-            nextQuery = filterHostsByWhereCondition(requirementChain);
-            joinChain += ""
-                    + "\n"
-                    + "INNER JOIN\n"
-                    + "(\n"
-                    + nextQuery.compose(2, qt)
-                    + "\n) " + _nextId + "\n"
-                    + "ON " + firstKey.stream().map(k -> lastId + "." + k + "=" + _nextId + "." + k).collect(joining(" AND "));
-            
-            nextId = _nextId;
-        }
-        
-        Query finalQuery = new Query(""
-                + "SELECT "
-                + firstKey.stream().collect(joining(",")) + "\n"
-                + "FROM\n"
-                + joinChain,
-                qt.params()
-        );
-        
-        return finalQuery;
-    }
-    
-    public static Query filterHostsByWhereCondition(List<? extends Requirement> requirementChain) {
+    public static Query filterByWhereCondition(List<Requirement> requirementChain) {
         Validate.notNull(requirementChain);
         Validate.noNullElements(requirementChain);
         Validate.isTrue(!requirementChain.isEmpty());
@@ -177,7 +128,7 @@ final class WorkerSearcherSql {
         return qr4;
     }
     
-    public static Query selectWithExpressionProperties(List<? extends Requirement> requirementChain) {
+    static Query selectWithExpressionProperties(List<Requirement> requirementChain) {
         QueryTracker qt = new QueryTracker();
         
         Requirement finalRequirement = requirementChain.get(requirementChain.size() - 1);
@@ -241,7 +192,7 @@ final class WorkerSearcherSql {
         return new Query(qr1, qt.params());
     }
     
-    public static Query selectFlattenedProperties(
+    static Query selectFlattenedProperties(
             List<Class<? extends Requirement>> requirementChain,
             Set<String> propertyNames) {
         Validate.notNull(requirementChain);
@@ -294,7 +245,7 @@ final class WorkerSearcherSql {
         return finalQuery;
     }
     
-    public static Query selectByProperty(
+    static Query selectByProperty(
             List<Class<? extends Requirement>> requirementChain,
             String propertyName) {
         Validate.notNull(requirementChain);
@@ -355,90 +306,7 @@ final class WorkerSearcherSql {
         return qr3;
     }    
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    static Query filterHostsByCountAndCapacity(
-            Map<String, BigDecimal> minCounts,
-            Map<String, BigDecimal> minCapacities) {
-        QueryTracker qt = new QueryTracker();
-        
-        String id1 = qt.alias();
-        List<String> whereChain1 = Stream
-                .concat(
-                        minCounts.entrySet().stream().map(e -> e.getKey() + "_count=" + qt.param(e.getKey(), e.getValue())),
-                        minCapacities.entrySet().stream().map(e -> e.getKey() + "_capacity_sum=" + qt.param(e.getKey(), e.getValue()))
-                )
-                .collect(toList());
-        String qr1 = "SELECT s_host, n_port\n"
-                + "FROM worker " + id1 + "\n"
-                + "WHERE " + whereChain1.stream().collect(joining(" AND "));
-
-        return new Query(qr1, qt.params());
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-
-    
-    
-    
-    
-    
-    
-    
-    public static String expressionize(
+    static String expressionize(
             Expression expression,
             QueryTracker queryTracker,
             String tableAlias,
@@ -496,7 +364,7 @@ final class WorkerSearcherSql {
         }
     }
     
-    public static void collectVariableNames(Expression expression, String scope, Set<String> names) {
+    static void collectVariableNames(Expression expression, String scope, Set<String> names) {
         if (expression instanceof VariableExpression) {
             VariableExpression ve = (VariableExpression) expression;
             if (ve.getScope().equals(scope)) {
@@ -510,6 +378,147 @@ final class WorkerSearcherSql {
             // do nothing
         } else {
             throw new IllegalArgumentException();
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    public static Query filterByCachedCountAndCapacity(
+            String cacheTableName,
+            Set<Requirement> parentsRequirements,
+            MultiValuedMap<Requirement, Requirement> requirementHierarchy) {
+        Validate.notNull(cacheTableName);
+        Validate.notNull(parentsRequirements);
+        Validate.notNull(requirementHierarchy);
+        Validate.noNullElements(parentsRequirements);
+        Validate.noNullElements(requirementHierarchy.keySet());
+        Validate.noNullElements(requirementHierarchy.values());
+        Validate.notEmpty(cacheTableName);
+        Validate.notEmpty(parentsRequirements);
+        Validate.isTrue(!requirementHierarchy.isEmpty());
+        Validate.isTrue(requirementHierarchy.keySet().containsAll(parentsRequirements)); // parents must exist as keys
+        Validate.isTrue(requirementHierarchy.values().stream().noneMatch(r -> !parentsRequirements.contains(r))); // parents can't be childs
+        
+        Map<String, BigDecimal> minCounts = new HashMap<>();
+        Map<String, BigDecimal> minCapacities = new HashMap<>();
+        for (Requirement parentRequirement : parentsRequirements) {
+            calculateTotals(parentRequirement, minCounts, minCapacities);
+        }
+        
+        QueryTracker qt = new QueryTracker();
+        
+        String id1 = qt.alias();
+        List<String> whereChain1 = Stream
+                .concat(
+                        minCounts.entrySet().stream().map(e -> e.getKey() + "_count=" + qt.param(e.getKey(), e.getValue())),
+                        minCapacities.entrySet().stream().map(e -> e.getKey() + "_capacity_sum=" + qt.param(e.getKey(), e.getValue()))
+                )
+                .collect(toList());
+        String qr1 = "SELECT s_host, n_port\n"
+                + "FROM worker " + id1 + "\n"
+                + "WHERE " + whereChain1.stream().collect(joining(" AND "));
+
+        return new Query(qr1, qt.params());
+    }
+    
+    // Sums up the TOTAL start counts and TOTAL minimum capacities. For example...
+    //     [3,4] socket {
+    //       ? core {
+    //         [10,999999] cpu with [50000,100000] capacity
+    //         1 cpu with 1000 capacity
+    //       }
+    //     }
+    //     mount with capacity [25gb,50gb]
+    //     mount with capacity [100gb,120gb]
+    // will result in...
+    // count_socket   = 3                         = 3              = 3
+    // count_core     = 3*1                       = 3              = 3
+    // count_cpu      = 3*1*10 + 3*1*1            = 30 + 3         = 33
+    // capacity_cpu   = 3*1*10*50000 + 3*1*1*1000 = 1500000 + 3000 = 1503000
+    // count_mount    = 1 + 1                     = 1 + 1          = 2
+    // capacity_mount = 1*25gb + 1*100gb          = 25gb + 100gb   = 125gb
+    //
+    // Then we grab 2 hosts that match those counts.
+    private static void calculateTotals(
+            Requirement requirement,
+            Map<String, BigDecimal> minCounts,
+            Map<String, BigDecimal> minCapacities) {
+        
+        MultiValuedMap<String, Requirement> requirementChildren = getRequirementChildren(requirement);
+        for (Requirement childRequirement : requirementChildren.values()) {
+            recursiveCalculateTotals(childRequirement, ONE, minCounts, minCapacities);
+        }
+    }
+
+    private static void recursiveCalculateTotals(
+            Requirement requirement,
+            BigDecimal countMultiplier,
+            Map<String, BigDecimal> minCounts,
+            Map<String, BigDecimal> minCapacities) {
+        String name = getRequirementName(requirement);
+        
+        // remember count of null means '?' was used when specifying the req
+        BigDecimal countStart = requirement.getCount() == null ? ONE : requirement.getCount().getStart();
+        BigDecimal countStartMultipliedByCount = countMultiplier.multiply(countStart);
+        
+        BigDecimal minCount = minCounts.getOrDefault(name, BigDecimal.ZERO).add(countStartMultipliedByCount);
+        minCounts.put(name, minCount);
+            
+        // If requirement has capacity, add min capacity in minCapacities map.
+        if (requirement instanceof CapacityEnabledRequirement) {
+            BigDecimal capacityStart = ((CapacityEnabledRequirement) requirement).getCapacityRange().getStart();
+            BigDecimal capacityStartMultipliedByCount = countStart.multiply(capacityStart);
+            
+            BigDecimal minCapacity = minCapacities.getOrDefault(name, BigDecimal.ZERO).add(capacityStartMultipliedByCount);
+            minCapacities.put(name, minCapacity);
+        }
+        
+        // Get children -- for each child, recurse. After this method returns the minCapacities map should contain the total minimum
+        // capacity required by a requirement type. For example...
+        //   1 host {
+        //     2 socket {
+        //       [3,4] cpu with [50000,100000] capacity
+        //       1 cpu with 1000 capacity 
+        //     }
+        //   }
+        // ... the minCapacities map should give back 151000 (50000 * 3) + (1 * 1000)
+        MultiValuedMap<String, Requirement> requirementChildren = getRequirementChildren(requirement);
+        for (Requirement childRequirement : requirementChildren.values()) {
+            recursiveCalculateTotals(childRequirement, minCount, minCounts, minCapacities);
         }
     }
 }
