@@ -40,6 +40,11 @@ public final class NumberCheckUtils {
         Validate.notNull(value);
         Validate.isTrue(value.compareTo(BigDecimal.ONE) <= 0, "Value must <= 1");
     }
+
+    public static void isAtMost(BigDecimal value, long limit) {
+        Validate.notNull(value);
+        Validate.isTrue(value.compareTo(BigDecimal.valueOf(limit)) <= 0, "Value must <= %d", limit);
+    }
     
     public static void isNonFractional(BigDecimal value) {
         Validate.notNull(value);

@@ -9,7 +9,6 @@ import com.offbynull.rfm.host.model.expression.BooleanLiteralExpression;
 import com.offbynull.rfm.host.model.expression.StringLiteralExpression;
 import com.offbynull.rfm.host.model.expression.InvocationExpression;
 import com.offbynull.rfm.host.model.requirement.NumberRange;
-import com.offbynull.rfm.host.model.requirement.CapacityRequirement;
 import com.offbynull.rfm.host.model.requirement.CoreRequirement;
 import com.offbynull.rfm.host.model.requirement.CpuRequirement;
 import com.offbynull.rfm.host.model.requirement.SocketRequirement;
@@ -76,34 +75,26 @@ public class ParserTest {
                 // resources. For example, your code may run faster if you were to ...
                 //    1. only select GPUs that are on the same PCI bus as the CPU sockets you selected.
                 //    2. only assign memoy from the NUMA nodes that the CPUs you selected have direct access to (minimize hops).
-                + "[1,20] hosts {\n"
+                + "[1,20] host {\n"
                        // Remember that GPU is a generic identifier for any GPU and that its properties aren't set in stone. For example, if
                        // you wanted AMD gpus running on OpenCL 2.2, the where condition might be...
                        //    (gpu.s_vendor="amd" && gpu.n_opencl_version="2.2") && host.n_free_mem >= cuda.n_opencl_total_mem
                        // Obviously, AMD GPUs wouldn't contain the CUDA properties seen below (e.g. no gpu.n_cuda_major_version).
-                + "    [1,5] gpus where (gpu.s_vendor==s_gpu_vendor && gpu.n_cuda_major_version>=7) && host.n_free_mem >= cuda.n_cuda_total_mem {\n"
-                + "        available"
-                + "    }\n"
+                + "    [1,5] gpu with 1 capacity where (gpu.s_vendor==s_gpu_vendor && gpu.n_cuda_major_version>=7) && host.n_free_mem >= gpu.n_cuda_total_mem\n"
                        // Remember that, just like GPU, CPU is a generic identifier for any CPU and that its properties aren't set in stone.
                        // AMD CPUs might have properties missing from Intel CPUs and vice-versa.
                        //
                        // Also, remember that CPU hierarchy isn't nessecarily needed. For example, if you have the core requirement directly
                        // under host (instead of under socket), the system won't nessecarily give you cores from the same socket.
-                + "    [3,40] sockets where socket.s_vendor==\"intel\" && socket.s_family==\"xeon\" {\n"
+                + "    [3,40] socket where socket.s_vendor==\"intel\" && socket.s_family==\"xeon\" {\n"
                 + "        [1,9999] core where core.n_siblings>=2 {\n"
-                + "            2 cpus {\n"
-                + "                100000 capacity\n"
-                + "            }\n"
+                + "            2 cpus with 100000 capacity\n"
                 + "        }\n"
                 + "    }\n"
                        // In the future, you may be able to declare RAM requirements directly under the CPU/core/socket in order to lock
                        // to the NUMA node(s) of that CPU/core/socket.
-                + "    ram where ram.n_mhz>=2666 && ram.s_type==\"ddr4\" {"
-                + "        [4gb,9gb] capacity\n"
-                + "    }\n"
-                + "    1 mount where !mount.b_rotational {\n"
-                + "        [10gb,40gb] capacity\n"
-                + "    }\n"
+                + "    1 ram with [4gb,9gb] capacity where ram.n_mhz>=2666 && ram.s_type==\"ddr4\"\n"
+                + "    1 mount with [10gb,40gb] capacity where !mount.b_rotational"
                 + "}");
 
         assertEquals("id", work.getId());
@@ -132,9 +123,7 @@ public class ParserTest {
         assertEquals(1, cpuReqs.size());
         assertRange(2L, 2L, cpuReqs.get(0).getCount());
         assertEquals(BooleanLiteralExpression.class, cpuReqs.get(0).getWhereCondition().getClass());
-        CapacityRequirement sliceReq = cpuReqs.get(0).getCapacityRequirement();
-        assertRange(100000L, 100000L, sliceReq.getNumberRange());
-        assertEquals(BooleanLiteralExpression.class, sliceReq.getWhereCondition().getClass());
+        assertRange(100000L, 100000L, cpuReqs.get(0).getCapacityRange());
         
         List<GpuRequirement> gpuReqs = req.getGpuRequirements();
         assertEquals(1, gpuReqs.size());
@@ -145,17 +134,13 @@ public class ParserTest {
         assertEquals(1, ramReqs.size());
         assertRange(1L, 1L, ramReqs.get(0).getCount());
         assertEquals(InvocationExpression.class, ramReqs.get(0).getWhereCondition().getClass());
-        CapacityRequirement ramCapReq = ramReqs.get(0).getCapacityRequirement();
-        assertRange(4294967296L, 9663676416L, ramCapReq.getNumberRange());
-        assertEquals(BooleanLiteralExpression.class, ramCapReq.getWhereCondition().getClass());
+        assertRange(4294967296L, 9663676416L, ramReqs.get(0).getCapacityRange());
         
         List<MountRequirement> mountReqs = req.getMountRequirements();
         assertEquals(1, mountReqs.size());
         assertRange(1L, 1L, mountReqs.get(0).getCount());
         assertEquals(InvocationExpression.class, mountReqs.get(0).getWhereCondition().getClass());
-        CapacityRequirement mountCapReq = mountReqs.get(0).getCapacityRequirement();
-        assertRange(10737418240L, 42949672960L, mountCapReq.getNumberRange());
-        assertEquals(BooleanLiteralExpression.class, mountCapReq.getWhereCondition().getClass());
+        assertRange(10737418240L, 42949672960L, mountReqs.get(0).getCapacityRange());
     }
 
     @Test
@@ -166,10 +151,10 @@ public class ParserTest {
                 + ""
                 + "\n"
                 + "[1,20] host {\n"
-                + "    1 gpu where gpu.n_cuda_major_version==7 || cuda.n_cuda_sm_cores>=12 { available }\n"
-                + "    1 cpu { 100000 capacity }\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
+                + "    1 gpu with 1 capacity where gpu.n_cuda_major_version==7 || gpu.n_cuda_sm_cores>=12\n"
+                + "    1 cpu with 100000 capacity\n"
+                + "    1 ram with 4gb capacity\n"
+                + "    1 mount with 10gb capacity\n"
                 + "}");
         HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
         
@@ -212,10 +197,10 @@ public class ParserTest {
                 + "dep_id3\n"
                 + "\n"
                 + "[1,20] host {\n"
-                + "    1 gpu { available }\n"
-                + "    1 cpu { 100000 capacity }\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
+                + "    1 gpu with 1 capacity\n"
+                + "    1 cpu with 100000 capacity\n"
+                + "    1 ram with 4gb capacity\n"
+                + "    1 mount with 10gb capacity\n"
                 + "}");
 
         assertTrue(work.getTags().isEmpty());
@@ -232,10 +217,10 @@ public class ParserTest {
                 + "s_tag_test3=\"aaabbb\"\n"
                 + "\n"
                 + "[1,20] host {\n"
-                + "    1 gpu { available }\n"
-                + "    1 cpu { 100000 capacity }\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
+                + "    1 gpu with 1 capacity\n"
+                + "    1 cpu with 100000 capacity\n"
+                + "    1 ram with 4gb capacity\n"
+                + "    1 mount with 10gb capacity\n"
                 + "}");
 
         assertTrue(work.getParents().isEmpty());
@@ -253,10 +238,10 @@ public class ParserTest {
                 + "s_tag_test3=\"aaabbb\"\n"
                 + "\n"
                 + "[1,20] host {\n"
-                + "    1 gpu { available }\n"
+                + "    1 gpu with 1 capacity\n"
                 + "    1 cpu\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
+                + "    1 ram with 4gb capacity\n"
+                + "    1 mount with 10gb capacity\n"
                 + "}");
     }
 
@@ -271,10 +256,10 @@ public class ParserTest {
                 + "s_tag_test3=\"aaabbb\"\n"
                 + "\n"
                 + "[1,20] host {\n"
-                + "    1 gpu { available }\n"
+                + "    1 gpu with 1 capacity\n"
                 + "    1 cpu\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
+                + "    1 ram with 4gb capacity\n"
+                + "    1 mount with 10gb capacity\n"
                 + "}");
     }
 
@@ -289,10 +274,10 @@ public class ParserTest {
                 + "dep_id3\n"
                 + "\n"
                 + "[1,20] host {\n"
-                + "    1 gpu { available }\n"
+                + "    1 gpu with 1 capacity\n"
                 + "    1 cpu\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
+                + "    1 ram with 4gb capacity\n"
+                + "    1 mount with 10gb capacity\n"
                 + "}");
     }
 
@@ -310,11 +295,11 @@ public class ParserTest {
                 + "[1,20] host {\n"
                 + "    [1,9999] socket {\n"
                 + "        [1,9999] core{\n"
-                + "            [1,9999] cpu { 100000 capacity }\n"
+                + "            [1,9999] cpu with 100000 capacity\n"
                 + "        }\n"
                 + "    }\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
+                + "    1 ram with 4gb capacity\n"
+                + "    1 mount with 10gb capacity\n"
                 + "}");
         HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
         
@@ -330,8 +315,7 @@ public class ParserTest {
         CpuRequirement cpuReq = coreReq.getCpuRequirements().get(0);
         assertRange(1, 9999, cpuReq.getCount());
 
-        CapacityRequirement sliceReq = cpuReq.getCapacityRequirement();
-        assertRange(100000, 100000, sliceReq.getNumberRange());
+        assertRange(100000, 100000, cpuReq.getCapacityRange());
     }
     
     
@@ -349,11 +333,11 @@ public class ParserTest {
                 + "[1,20] host {\n"
                 + "    1 socket {\n"
                 + "        1 core{\n"
-                + "            1 cpu { 100000 capacity }\n"
+                + "            1 cpu with 100000 capacity\n"
                 + "        }\n"
                 + "    }\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    2 mount { 10gb capacity }\n"
+                + "    1 ram with 4gb capacity\n"
+                + "    2 mount with 10gb capacity\n"
                 + "    }\n"
                 + "}");
         HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
@@ -362,8 +346,7 @@ public class ParserTest {
         MountRequirement mountReq = hostReq.getMountRequirements().get(0);
         assertRange(2, 2, mountReq.getCount());
 
-        CapacityRequirement capacityReq = mountReq.getCapacityRequirement();
-        assertRange(10737418240L, 10737418240L, capacityReq.getNumberRange());
+        assertRange(10737418240L, 10737418240L, mountReq.getCapacityRange());
     }
     
 
@@ -381,11 +364,11 @@ public class ParserTest {
                 + "[1,20] host {\n"
                 + "    1 socket {\n"
                 + "        1 core{\n"
-                + "            1 cpu { 100000 capacity }\n"
+                + "            1 cpu with 100000 capacity\n"
                 + "        }\n"
                 + "    }\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
+                + "    1 ram with 4gb capacity\n"
+                + "    1 mount with 10gb capacity\n"
                 + "}");
         fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
     }
@@ -399,10 +382,10 @@ public class ParserTest {
                 + "[1,20] host {\n"
                 + "    1 socket {\n"
                 + "        1 core{\n"
-                + "            1 cpu { 100000 capacity }\n"
+                + "            1 cpu with 100000 capacity\n"
                 + "        }\n"
                 + "    }\n"
-                + "    1 ram { 4gb capacity }\n"
+                + "    1 ram with 4gb capacity\n"
                 + "}");
     }
 
@@ -416,10 +399,10 @@ public class ParserTest {
                 + "[1,20] host {\n"
                 + "    1 socket {\n"
                 + "        1 core{\n"
-                + "            1 cpu { 100000 capacity }\n"
+                + "            1 cpu with 100000 capacity\n"
                 + "        }\n"
                 + "    }\n"
-                + "    1 mount { 4gb capacity }\n"
+                + "    1 mount with 4gb capacity\n"
                 + "}");
     }
 
@@ -432,12 +415,12 @@ public class ParserTest {
                 + "[1,20] host {\n"
                 + "    1 socket {\n"
                 + "        1 core{\n"
-                + "            1 cpu { 100000 capacity }\n"
+                + "            1 cpu with 100000 capacity\n"
                 + "        }\n"
                 + "    }\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
+                + "    1 ram with 4gb capacity\n"
+                + "    1 ram with 4gb capacity\n"
+                + "    1 mount with 10gb capacity\n"
                 + "}");
     }
 
@@ -450,11 +433,11 @@ public class ParserTest {
                 + "[1,20] host {\n"
                 + "    1 socket {\n"
                 + "        1 core{\n"
-                + "            1 cpu { 100000 capacity }\n"
+                + "            1 cpu with 100000 capacity\n"
                 + "        }\n"
                 + "    }\n"
-                + "    2 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
+                + "    2 ram with 4gb capacity\n"
+                + "    1 mount with 10gb capacity\n"
                 + "}");
     }
 
@@ -465,8 +448,8 @@ public class ParserTest {
                 + "0.5\n"
                 + "\n"
                 + "[1,20] host {\n"
-                + "    ` ram { 4gb capacity }\n"
-                + "    1 mount { 4gb capacity }\n"
+                + "    1 ram with 4gb capacity\n"
+                + "    1 mount with 4gb capacity\n"
                 + "}");
     }
 
@@ -483,8 +466,8 @@ public class ParserTest {
                 + "            1 cpu\n"
                 + "        }\n"
                 + "    }\n"
-                + "    2 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
+                + "    2 ram with 4gb capacity\n"
+                + "    1 mount with 10gb capacity\n"
                 + "}");
     }
 
@@ -498,11 +481,11 @@ public class ParserTest {
                 + "[1,20] host {\n"
                 + "    1 socket {\n"
                 + "        1 core{\n"
-                + "            1 cpu { 100000 capacity }\n"
+                + "            1 cpu with 100000 capacity\n"
                 + "        }\n"
                 + "    }\n"
                 + "    2 ram\n"
-                + "    1 mount { 10gb capacity }\n"
+                + "    1 mount with 10gb capacity\n"
                 + "}");
     }
     
@@ -516,10 +499,10 @@ public class ParserTest {
                 + "[1,20] host {\n"
                 + "    1 socket {\n"
                 + "        1 core{\n"
-                + "            1 cpu { 100000 capacity }\n"
+                + "            1 cpu with 100000 capacity\n"
                 + "        }\n"
                 + "    }\n"
-                + "    2 ram { 4gb capacity }\n"
+                + "    2 ram with 4gb capacity\n"
                 + "    1 mount\n"
                 + "}");
     }
@@ -538,9 +521,9 @@ public class ParserTest {
                 + "s_test_tag=to_str(abs(-5))"
                 + "\n"
                 + "1 host {\n"
-                + "    1 cpu { 100000 capacity }\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
+                + "    1 cpu with 100000 capacity\n"
+                + "    1 ram with 4gb capacity\n"
+                + "    1 mount with 10gb capacity\n"
                 + "}");
         
         assertEquals("5", work.getTags().get("s_test_tag"));
@@ -555,9 +538,9 @@ public class ParserTest {
                 + "s_test_tag=to_str(abs(-5))"
                 + "\n"
                 + "1 host where rtestfunc(1234)==\"6\" {\n"
-                + "    1 cpu { 100000 capacity }\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
+                + "    1 cpu with 100000 capacity\n"
+                + "    1 ram with 4gb capacity\n"
+                + "    1 mount with 10gb capacity\n"
                 + "}");
         HostRequirement hostReq = fixture.parseScriptReqs(work.getTags(), work.getRequirementsScript());
         
@@ -588,9 +571,9 @@ public class ParserTest {
                 + "n_tag_b=abs(n_tag_a)\n"
                 + "\n"
                 + "1 host where n_tag_a==n_tag_b {\n"
-                + "    1 cpu { 100000 capacity }\n"
-                + "    1 ram { 4gb capacity }\n"
-                + "    1 mount { 10gb capacity }\n"
+                + "    1 cpu with 100000 capacity\n"
+                + "    1 ram with 4gb capacity\n"
+                + "    1 mount with 10gb capacity\n"
                 + "}");
         
         

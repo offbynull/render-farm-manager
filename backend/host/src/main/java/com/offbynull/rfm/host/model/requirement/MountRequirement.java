@@ -16,8 +16,10 @@
  */
 package com.offbynull.rfm.host.model.requirement;
 
+import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast0;
 import com.offbynull.rfm.host.model.expression.Expression;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast1;
+import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtMost;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
 import org.apache.commons.lang3.Validate;
 
@@ -38,7 +40,10 @@ public final class MountRequirement extends Requirement implements CapacityEnabl
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
      * {@code count != null && NumberCheckUtils.isAtLeast1(count.getStart())},
      * {@code count != null && NumberCheckUtils.isNonFractional(count.getStart())},
-     * {@code count != null && NumberCheckUtils.isNonFractional(count.getEnd())}
+     * {@code count != null && NumberCheckUtils.isNonFractional(count.getEnd())},
+     * {@code NumberCheckUtils.isAtLeast0(capacityRange.getStart())},
+     * {@code NumberCheckUtils.isNonFractional(capacityRange.getStart())},
+     * {@code NumberCheckUtils.isNonFractional(capacityRange.getEnd())}
      */
     public MountRequirement(NumberRange count, Expression whereCondition,
             NumberRange capacityRange) {
@@ -51,6 +56,11 @@ public final class MountRequirement extends Requirement implements CapacityEnabl
             isNonFractional(count.getStart());
             isNonFractional(count.getEnd());
         }
+        
+        isNonFractional(capacityRange.getStart());
+        isNonFractional(capacityRange.getEnd());
+        isAtLeast0(capacityRange.getStart());
+        isAtMost(capacityRange.getEnd(), 100000L);
         
         this.capacityRange = capacityRange;
     }

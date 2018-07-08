@@ -16,8 +16,10 @@
  */
 package com.offbynull.rfm.host.model.requirement;
 
+import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast0;
 import com.offbynull.rfm.host.model.expression.Expression;
-import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast1;
+import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtMost;
+import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtMost1;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
 import org.apache.commons.lang3.Validate;
 
@@ -38,7 +40,11 @@ public final class CpuRequirement extends Requirement implements CapacityEnabled
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
      * {@code count != null && NumberCheckUtils.isAtLeast0(count.getStart())},
      * {@code count != null && NumberCheckUtils.isNonFractional(count.getStart())},
-     * {@code count != null && NumberCheckUtils.isNonFractional(count.getEnd())}
+     * {@code count != null && NumberCheckUtils.isNonFractional(count.getEnd())},
+     * {@code NumberCheckUtils.isAtLeast0(capacityRange.getStart())},
+     * {@code NumberCheckUtils.isAtMost(capacityRange.getEnd(), 100000L)},
+     * {@code NumberCheckUtils.isNonFractional(capacityRange.getStart())},
+     * {@code NumberCheckUtils.isNonFractional(capacityRange.getEnd())}
      */
     public CpuRequirement(NumberRange count, Expression whereCondition,
             NumberRange capacityRange) {
@@ -47,10 +53,16 @@ public final class CpuRequirement extends Requirement implements CapacityEnabled
         Validate.notNull(capacityRange);
         
         if (count != null) {
-            isAtLeast1(count.getStart());
+            isAtLeast0(count.getStart());
+            isAtMost1(count.getEnd());
             isNonFractional(count.getStart());
             isNonFractional(count.getEnd());
         }
+        
+        isNonFractional(capacityRange.getStart());
+        isNonFractional(capacityRange.getEnd());
+        isAtLeast0(capacityRange.getStart());
+        isAtMost(capacityRange.getEnd(), 100000L);
         
         this.capacityRange = capacityRange;
     }

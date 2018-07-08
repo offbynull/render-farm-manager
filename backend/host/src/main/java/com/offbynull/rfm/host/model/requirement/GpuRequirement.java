@@ -38,9 +38,12 @@ public final class GpuRequirement extends Requirement implements CapacityEnabled
      * @throws NullPointerException if any argument other than {@code count} is {@code null}
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
      * {@code count != null && NumberCheckUtils.isAtLeast0(count.getStart())},
-     * {@code count != null && NumberCheckUtils.isAtMost1(count.getEnd())},
      * {@code count != null && NumberCheckUtils.isNonFractional(count.getStart())},
-     * {@code count != null && NumberCheckUtils.isNonFractional(count.getEnd())}
+     * {@code count != null && NumberCheckUtils.isNonFractional(count.getEnd())},
+     * {@code NumberCheckUtils.isAtLeast0(capacityRange.getStart())},
+     * {@code NumberCheckUtils.isAtMost1(capacityRange.getEnd())},
+     * {@code NumberCheckUtils.isNonFractional(capacityRange.getStart())},
+     * {@code NumberCheckUtils.isNonFractional(capacityRange.getEnd())}
      */
     public GpuRequirement(NumberRange count, Expression whereCondition,
             NumberRange capacityRange) {
@@ -50,10 +53,14 @@ public final class GpuRequirement extends Requirement implements CapacityEnabled
         
         if (count != null) {
             isAtLeast0(count.getStart());
-            isAtMost1(count.getEnd());
             isNonFractional(count.getStart());
             isNonFractional(count.getEnd());
         }
+        
+        isNonFractional(capacityRange.getStart());
+        isNonFractional(capacityRange.getEnd());
+        isAtLeast0(capacityRange.getStart());
+        isAtMost1(capacityRange.getEnd());
         
         this.capacityRange = capacityRange;
     }
