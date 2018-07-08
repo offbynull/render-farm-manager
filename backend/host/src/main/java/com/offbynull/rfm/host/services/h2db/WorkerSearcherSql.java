@@ -222,7 +222,7 @@ final class WorkerSearcherSql {
         String fullQueryAlias = qt.alias("fullquery");
         joinChain = ""
                 + "(\n"
-                + "  " + fullQuery
+                + "  " + fullQuery.compose(2, qt)
                 + "\n) " + fullQueryAlias;
         dbKeys.forEach(dbKey -> selectCols.add(fullQueryAlias + "." + dbKey));
         selectCols.add(fullQueryAlias + ".name");
@@ -419,24 +419,17 @@ final class WorkerSearcherSql {
     
     public static Query filterByCachedCountAndCapacity(
             String cacheTableName,
-            Set<Requirement> parentsRequirements,
-            MultiValuedMap<Requirement, Requirement> requirementHierarchy) {
+            List<Requirement> parentRequirements) {
         Validate.notNull(cacheTableName);
-        Validate.notNull(parentsRequirements);
-        Validate.notNull(requirementHierarchy);
-        Validate.noNullElements(parentsRequirements);
-        Validate.noNullElements(requirementHierarchy.keySet());
-        Validate.noNullElements(requirementHierarchy.values());
+        Validate.notNull(parentRequirements);
+        Validate.noNullElements(parentRequirements);
         Validate.notEmpty(cacheTableName);
-        Validate.notEmpty(parentsRequirements);
-        Validate.isTrue(!requirementHierarchy.isEmpty());
-        Validate.isTrue(requirementHierarchy.keySet().containsAll(parentsRequirements)); // parents must exist as keys
-        Validate.isTrue(requirementHierarchy.values().stream().noneMatch(r -> !parentsRequirements.contains(r))); // parents can't be childs
+        Validate.notEmpty(parentRequirements);
         
         Map<String, BigDecimal> minCounts = new HashMap<>();
         Map<String, BigDecimal> minCapacities = new HashMap<>();
-        for (Requirement parentRequirement : parentsRequirements) {
-            calculateTotals(parentRequirement, minCounts, minCapacities);
+        for (Requirement parentRequirement : parentRequirements) {
+            recursiveCalculateTotals(parentRequirement, ONE, minCounts, minCapacities);
         }
         
         QueryTracker qt = new QueryTracker();
@@ -473,17 +466,6 @@ final class WorkerSearcherSql {
     // capacity_mount = 1*25gb + 1*100gb          = 25gb + 100gb   = 125gb
     //
     // Then we grab 2 hosts that match those counts.
-    private static void calculateTotals(
-            Requirement requirement,
-            Map<String, BigDecimal> minCounts,
-            Map<String, BigDecimal> minCapacities) {
-        
-        MultiValuedMap<String, Requirement> requirementChildren = getRequirementChildren(requirement);
-        for (Requirement childRequirement : requirementChildren.values()) {
-            recursiveCalculateTotals(childRequirement, ONE, minCounts, minCapacities);
-        }
-    }
-
     private static void recursiveCalculateTotals(
             Requirement requirement,
             BigDecimal countMultiplier,
@@ -515,7 +497,7 @@ final class WorkerSearcherSql {
         //       1 cpu with 1000 capacity 
         //     }
         //   }
-        // ... the minCapacities map should give back 151000 (50000 * 3) + (1 * 1000)
+        // ... the minCapacities map should give back a cpu capacity of 151000 (50000 * 3) + (1 * 1000)
         MultiValuedMap<String, Requirement> requirementChildren = getRequirementChildren(requirement);
         for (Requirement childRequirement : requirementChildren.values()) {
             recursiveCalculateTotals(childRequirement, minCount, minCounts, minCapacities);

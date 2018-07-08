@@ -12,8 +12,8 @@ import static org.apache.commons.collections4.ListUtils.union;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.list.UnmodifiableList;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.ClassUtils;
+import static org.apache.commons.lang3.StringUtils.capitalize;
 import static org.apache.commons.lang3.StringUtils.removeEnd;
 import static org.apache.commons.lang3.StringUtils.removeStart;
 import static org.apache.commons.lang3.StringUtils.uncapitalize;
@@ -30,7 +30,7 @@ final class InternalUtils {
     }
     
     static String getRequirementName(Class<?> requirement) {
-        String className = requirement.getClass().getSimpleName();
+        String className = requirement.getSimpleName();
         Validate.isTrue(className.endsWith("Requirement"));
         String name = className;
         name = removeEnd(name, "Requirement");
@@ -56,7 +56,7 @@ final class InternalUtils {
     static Set<String> getRequirementKey(Class<?> requirementCls) {
         String name = getRequirementName(requirementCls);
 
-        String specClassStr = "com.offbynull.rfm.host.model.specification." + name + "Specification";
+        String specClassStr = "com.offbynull.rfm.host.model.specification." + capitalize(name) + "Specification";
         try {
             Class<?> specClass = requirementCls.getClassLoader().loadClass(specClassStr);
             return (Set<String>) MethodUtils.invokeStaticMethod(specClass, "getKeyPropertyNames");
@@ -121,19 +121,6 @@ final class InternalUtils {
             return childRequirements;
         } catch (IllegalArgumentException | ReflectiveOperationException ex) {
             throw new IllegalStateException(ex); // should never happen
-        }
-    }
-    
-    static MultiValuedMap<Requirement, Requirement> getRequirementHierarchy(Requirement requirement) {
-        MultiValuedMap<Requirement, Requirement> ret = new HashSetValuedHashMap<>();
-        getRequirementHierarchy(ret, requirement);
-        return ret;
-    }
-    
-    private static void getRequirementHierarchy(MultiValuedMap<Requirement, Requirement> collection, Requirement requirement) {
-        for (Requirement childRequirement : getRequirementChildren(requirement).values()) {
-            collection.put(requirement, childRequirement);
-            getRequirementHierarchy(collection, childRequirement);
         }
     }
     
