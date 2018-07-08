@@ -19,8 +19,9 @@ package com.offbynull.rfm.host.model.specification;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.commons.collections4.list.UnmodifiableList;
@@ -67,7 +68,11 @@ public final class HostSpecification extends Specification {
      * {@code properties.keySet().contains("n_port")},
      * {@code !properties.keySet().contains(null)},
      * {@code !properties.values().contains(null)},
-     * {@code properties.entrySet().forEach(e -> IdCheckUtils.isCorrectVarId(k, v.getClass()))}
+     * {@code properties.entrySet().forEach(e -> IdCheckUtils.isCorrectVarId(k, v.getClass()))},
+     * {@code stream(socketSpecifications).noneMatch(r -> r == null)},
+     * {@code stream(gpuSpecifications).noneMatch(r -> r == null)},
+     * {@code stream(mountSpecifications).noneMatch(r -> r == null)},
+     * {@code stream(ramSpecifications).noneMatch(r -> r == null)},
      * {@code !socketSpecifications.contains(null)},
      * {@code !gpuSpecifications.contains(null)},
      * {@code !mountSpecifications.contains(null)},
@@ -78,17 +83,17 @@ public final class HostSpecification extends Specification {
      * {@code NumberCheckUtils.isNonFractional((BigDecimal) properties.get("n_port"))},
      * {@code ((BigDecimal) properties.get("n_port")).intValueExact() >= 1},
      * {@code ((BigDecimal) properties.get("n_port")).intValueExact() <= 65535},
-     * {@code socketSpecifications.stream().map(x -> x.getKeyProperties()).distinct().count() == socketSpecifications.size()},
-     * {@code gpuSpecifications.stream().map(x -> x.getKeyProperties()).distinct().count() == gpuSpecifications.size()},
-     * {@code mountSpecifications.stream().map(x -> x.getKeyProperties()).distinct().count() == mountSpecifications.size()},
-     * {@code ramSpecifications.stream().map(x -> x.getKeyProperties()).distinct().count() == ramSpecifications.size()},
+     * {@code stream(socketSpecifications).map(x -> x.getKeyProperties()).distinct().count() == socketSpecifications.length},
+     * {@code stream(gpuSpecifications).map(x -> x.getKeyProperties()).distinct().count() == gpuSpecifications.length},
+     * {@code stream(mountSpecifications).map(x -> x.getKeyProperties()).distinct().count() == mountSpecifications.length},
+     * {@code stream(ramSpecifications).map(x -> x.getKeyProperties()).distinct().count() == ramSpecifications.length},
      * {@code ramSpecifications.size() == 1},
      */
     public HostSpecification(
-            List<SocketSpecification> socketSpecifications,
-            List<GpuSpecification> gpuSpecifications,
-            List<MountSpecification> mountSpecifications,
-            List<RamSpecification> ramSpecifications,
+            SocketSpecification[] socketSpecifications,
+            GpuSpecification[] gpuSpecifications,
+            MountSpecification[] mountSpecifications,
+            RamSpecification[] ramSpecifications,
             Map<String, Object> properties) {
         super(properties, KEY_NAMES);
         
@@ -109,16 +114,16 @@ public final class HostSpecification extends Specification {
         Validate.isTrue(port.intValueExact() >= 1);
         Validate.isTrue(port.intValueExact() <= 65535);
         
-        Validate.isTrue(socketSpecifications.stream().map(x -> x.getProperties()).distinct().count() == socketSpecifications.size());
-        Validate.isTrue(gpuSpecifications.stream().map(x -> x.getProperties()).distinct().count() == gpuSpecifications.size());
-        Validate.isTrue(mountSpecifications.stream().map(x -> x.getProperties()).distinct().count() == mountSpecifications.size());
-        Validate.isTrue(ramSpecifications.stream().map(x -> x.getProperties()).distinct().count() == ramSpecifications.size());
-        Validate.isTrue(ramSpecifications.size() == 1);
+        Validate.isTrue(stream(socketSpecifications).map(x -> x.getProperties()).distinct().count() == socketSpecifications.length);
+        Validate.isTrue(stream(gpuSpecifications).map(x -> x.getProperties()).distinct().count() == gpuSpecifications.length);
+        Validate.isTrue(stream(mountSpecifications).map(x -> x.getProperties()).distinct().count() == mountSpecifications.length);
+        Validate.isTrue(stream(ramSpecifications).map(x -> x.getProperties()).distinct().count() == ramSpecifications.length);
+        Validate.isTrue(ramSpecifications.length == 1);
         
-        this.socketSpecifications = (UnmodifiableList<SocketSpecification>) unmodifiableList(new ArrayList<>(socketSpecifications));
-        this.gpuSpecifications = (UnmodifiableList<GpuSpecification>) unmodifiableList(new ArrayList<>(gpuSpecifications));
-        this.mountSpecifications = (UnmodifiableList<MountSpecification>) unmodifiableList(new ArrayList<>(mountSpecifications));
-        this.ramSpecifications = (UnmodifiableList<RamSpecification>) unmodifiableList(new ArrayList<>(ramSpecifications));
+        this.socketSpecifications = (UnmodifiableList<SocketSpecification>) unmodifiableList(new ArrayList<>(asList(socketSpecifications)));
+        this.gpuSpecifications = (UnmodifiableList<GpuSpecification>) unmodifiableList(new ArrayList<>(asList(gpuSpecifications)));
+        this.mountSpecifications = (UnmodifiableList<MountSpecification>) unmodifiableList(new ArrayList<>(asList(mountSpecifications)));
+        this.ramSpecifications = (UnmodifiableList<RamSpecification>) unmodifiableList(new ArrayList<>(asList(ramSpecifications)));
     }
     
     /**

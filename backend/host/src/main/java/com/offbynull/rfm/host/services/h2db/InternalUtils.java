@@ -3,12 +3,21 @@ package com.offbynull.rfm.host.services.h2db;
 import com.offbynull.rfm.host.model.requirement.Requirement;
 import com.offbynull.rfm.host.model.specification.CapacityEnabledSpecification;
 import com.offbynull.rfm.host.model.specification.Specification;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import static java.util.Arrays.asList;
+import static java.util.Arrays.copyOfRange;
 import static java.util.Arrays.stream;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.collections4.ListUtils.union;
@@ -16,11 +25,13 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.list.UnmodifiableList;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.ClassUtils;
+import static org.apache.commons.lang3.ClassUtils.isAssignable;
 import static org.apache.commons.lang3.StringUtils.capitalize;
 import static org.apache.commons.lang3.StringUtils.removeEnd;
 import static org.apache.commons.lang3.StringUtils.removeStart;
 import static org.apache.commons.lang3.StringUtils.uncapitalize;
 import org.apache.commons.lang3.Validate;
+import static org.apache.commons.lang3.reflect.ConstructorUtils.invokeConstructor;
 import org.apache.commons.lang3.reflect.MethodUtils;
 
 final class InternalUtils {
@@ -34,7 +45,7 @@ final class InternalUtils {
     
     static String getRequirementName(Class<?> requirementCls) {
         String className = requirementCls.getSimpleName();
-        Validate.isTrue(className.endsWith("Requirement"));
+        Validate.validState(className.endsWith("Requirement"));
         String name = className;
         name = removeEnd(name, "Requirement");
         name = uncapitalize(name);
@@ -43,8 +54,8 @@ final class InternalUtils {
     
     static String getRequirementName(Method method) {
         String methodName = method.getName();
-        Validate.isTrue(methodName.startsWith("get"));
-        Validate.isTrue(methodName.endsWith("Requirements"));
+        Validate.validState(methodName.startsWith("get"));
+        Validate.validState(methodName.endsWith("Requirements"));
         String name = methodName;
         name = removeStart(name, "get");
         name = removeEnd(name, "Requirements");
@@ -74,11 +85,11 @@ final class InternalUtils {
         return getRequirementFullKeyFromClasses(requirementChain.stream().map(s -> s.getClass()).collect(toList()));
     }
     
-    static Set<String> getRequirementFullKeyFromClasses(List<Class<? extends Requirement>> requirementChain) {
+    static Set<String> getRequirementFullKeyFromClasses(List<Class<? extends Requirement>> requirementChainClses) {
         LinkedHashSet<String> ret = new LinkedHashSet<>();
         
-        for (Class<? extends Requirement> req : requirementChain) {
-            Set<String> key = getRequirementKey(req);
+        for (Class<? extends Requirement> reqCls : requirementChainClses) {
+            Set<String> key = getRequirementKey(reqCls);
             ret.addAll(key);
         }
         
@@ -157,7 +168,7 @@ final class InternalUtils {
     
     static String getSpecificationName(Class<?> specificationCls) {
         String className = specificationCls.getSimpleName();
-        Validate.isTrue(className.endsWith("Specification"));
+        Validate.validState(className.endsWith("Specification"));
         String name = className;
         name = removeEnd(name, "Specification");
         name = uncapitalize(name);
@@ -166,8 +177,8 @@ final class InternalUtils {
     
     static String getSpecificationName(Method method) {
         String methodName = method.getName();
-        Validate.isTrue(methodName.startsWith("get"));
-        Validate.isTrue(methodName.endsWith("Specifications"));
+        Validate.validState(methodName.startsWith("get"));
+        Validate.validState(methodName.endsWith("Specifications"));
         String name = methodName;
         name = removeStart(name, "get");
         name = removeEnd(name, "Specifications");
@@ -191,12 +202,26 @@ final class InternalUtils {
         return getSpecificationFullKeyFromClasses(specificationChain.stream().map(s -> s.getClass()).collect(toList()));
     }
     
-    static Set<String> getSpecificationFullKeyFromClasses(List<Class<? extends Specification>> specificationChain) {
+    static Set<String> getSpecificationFullKeyFromClasses(List<Class<? extends Specification>> specificationChainClses) {
         LinkedHashSet<String> ret = new LinkedHashSet<>();
         
-        for (Class<? extends Specification> req : specificationChain) {
-            Set<String> key = getSpecificationKey(req);
+        for (Class<? extends Specification> specCls : specificationChainClses) {
+            Set<String> key = getSpecificationKey(specCls);
             ret.addAll(key);
+        }
+        
+        return ret;
+    }
+
+    static Map<String, Object> getSpecificationFullKeyValues(List<Specification> specificationChain) {
+       LinkedHashMap<String, Object> ret = new LinkedHashMap<>();
+        
+        for (Specification spec : specificationChain) {
+            Set<String> key = getSpecificationKey(spec);
+            for (String keyItem : key) {
+                Object value = spec.getProperties().get(keyItem);
+                ret.put(keyItem, value);
+            }
         }
         
         return ret;
@@ -214,6 +239,59 @@ final class InternalUtils {
         return childSpecifications;
     }
     
+    static Set<Class<? extends Specification>> getSpecificationChildClasses(Class<? extends Specification> specificationCls) {
+        // derived from constructor params
+        
+        // single constructor
+        Constructor<?>[] constructors = specificationCls.getConstructors();
+        Validate.validState(constructors.length == 1);
+        Constructor<?> constructor = constructors[0];
+        Class<?>[] constructorParams = constructor.getParameterTypes();
+        
+        // split out child specification parameters
+        int lastIdx = asList(constructorParams).lastIndexOf(specificationCls) + 1; // children must be first
+        Class<?>[] specParams = copyOfRange(constructorParams, 0, lastIdx);
+        Validate.validState(stream(specParams).allMatch(s -> isAssignable(s, Specification.class)));
+        
+        // add to set and return
+        Set<Class<? extends Specification>> specChildTypes = new LinkedHashSet<>();
+        stream(specParams).forEach(s -> specChildTypes.add((Class<? extends Specification>) s));
+        Validate.validState(specChildTypes.size() == specParams.length); // child types must be unique
+        
+        return specChildTypes;
+    }
+    
+    static Specification constructSpecification(Class<? extends Specification> specCls, Set<Specification> children,
+            Map<String, Object> properties, BigDecimal capacity) {
+        Set<Class<? extends Specification>> childClses = getSpecificationChildClasses(specCls);
+        Validate.validState(isAssignable(specCls, CapacityEnabledSpecification.class) && capacity != null);
+
+        Object[] args = new Object[childClses.size() + (capacity == null ? 0 : 1)];
+
+        int idx = 0;
+        for (Class<?> childCls : childClses) {
+            Object param = children.stream()
+                .filter(child -> isAssignable(child.getClass(), childCls))
+                .map(child -> childCls.cast(child))
+                .toArray();
+            args[idx] = param;
+            idx++;
+        }
+        
+        args[idx] = properties;
+        idx++;
+        
+        if (capacity != null) {
+            args[idx] = capacity;
+        }
+        
+        try {
+            return invokeConstructor(specCls, args);
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException(ex); // should never happen
+        }
+    }
+    
     static UnmodifiableList<Specification> invokeSpecificationGetter(Method method, Specification object) {
         try {
             UnmodifiableList<Specification> childSpecifications = (UnmodifiableList<Specification>) method.invoke(object);
@@ -225,6 +303,12 @@ final class InternalUtils {
         } catch (IllegalArgumentException | ReflectiveOperationException ex) {
             throw new IllegalStateException(ex); // should never happen
         }
+    }
+    
+    static boolean isSpecificationCapacityEnabled(Class<? extends Specification> specificationCls) {
+        return stream(specificationCls.getInterfaces())
+                .filter(x -> x == CapacityEnabledSpecification.class)
+                .count() == 1L;
     }
     
     static BigDecimal getSpecificationCapacity(Specification specification) {
@@ -247,5 +331,44 @@ final class InternalUtils {
         
         Validate.validState(capacity != null); // sanity check -- if the method exists, it should never return null
         return capacity;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    public PreparedStatement prepareQuery(Connection conn, Query query) throws SQLException {
+        PreparedStatement ret = conn.prepareStatement(query.toJdbcQuery());
+        try {
+            int counter = 1;
+            List<Object> params = query.toJdbcParameters();
+            for (Object param : params) {
+                ret.setObject(counter, param);
+                counter++;
+            }
+        } catch (SQLException sqle) {
+            ret.close();
+            throw sqle;
+        }
+        return ret;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static Class<?> toArrayClass(Class<?> componentType, int... dimensions) {
+        return Array.newInstance(componentType, dimensions).getClass();
     }
 }

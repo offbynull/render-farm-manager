@@ -20,8 +20,9 @@ import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast0;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.commons.collections4.list.UnmodifiableList;
@@ -60,11 +61,12 @@ public final class CoreSpecification extends Specification {
      * {@code !properties.keySet().contains(null)},
      * {@code !properties.values().contains(null)},
      * {@code properties.entrySet().forEach(e -> IdCheckUtils.isCorrectVarId(k, v.getClass()))},
+     * {@code stream(cpuSpecifications).noneMatch(r -> r == null)},
      * {@code NumberCheckUtils.isNonFractional(properties.get("n_core_id"))},
      * {@code NumberCheckUtils.isAtLeast0(properties.get("n_core_id"))},
-     * {@code cpuSpecifications.stream().map(x -> x.getKeyProperties()).distinct().count() == cpuSpecifications.size()}
+     * {@code cpuSpecifications.stream().map(x -> x.getKeyProperties()).distinct().count() == cpuSpecifications.length}
      */
-    public CoreSpecification(List<CpuSpecification> cpuSpecifications, Map<String, Object> properties) {
+    public CoreSpecification(CpuSpecification[] cpuSpecifications, Map<String, Object> properties) {
         super(properties, KEY_NAMES);
         
         Validate.notNull(cpuSpecifications);
@@ -75,9 +77,9 @@ public final class CoreSpecification extends Specification {
         isNonFractional(coreId);
         isAtLeast0(coreId);
         
-        Validate.isTrue(cpuSpecifications.stream().map(x -> x.getProperties()).distinct().count() == cpuSpecifications.size());
+        Validate.isTrue(stream(cpuSpecifications).map(x -> x.getProperties()).distinct().count() == cpuSpecifications.length);
 
-        this.cpuSpecifications = (UnmodifiableList<CpuSpecification>) unmodifiableList(new ArrayList<>(cpuSpecifications));        
+        this.cpuSpecifications = (UnmodifiableList<CpuSpecification>) unmodifiableList(new ArrayList<>(asList(cpuSpecifications)));        
     }
     
     /**

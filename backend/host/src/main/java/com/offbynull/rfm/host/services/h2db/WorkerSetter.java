@@ -25,7 +25,7 @@ final class WorkerSetter {
         // do nothing
     }
     
-    public static void updateWorker(DataSource dataSource, Worker worker) throws SQLException {
+    public static void setWorker(DataSource dataSource, Worker worker) throws SQLException {
         Validate.notNull(dataSource);
         Validate.notNull(worker);
         

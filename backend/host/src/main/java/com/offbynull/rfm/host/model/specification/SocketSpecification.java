@@ -20,8 +20,9 @@ import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast0;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.apache.commons.collections4.list.UnmodifiableList;
@@ -60,11 +61,12 @@ public final class SocketSpecification extends Specification {
      * {@code !properties.keySet().contains(null)},
      * {@code !properties.values().contains(null)},
      * {@code properties.entrySet().forEach(e -> IdCheckUtils.isCorrectVarId(k, v.getClass()))},
+     * {@code stream(coreSpecifications).noneMatch(r -> r == null)},
      * {@code NumberCheckUtils.isNonFractional(properties.get("n_socket_id"))},
      * {@code NumberCheckUtils.isAtLeast0(properties.get("n_socket_id"))},
-     * {@code coreSpecifications.stream().map(x -> x.getKeyProperties()).distinct().count() == coreSpecifications.size()}
+     * {@code stream(coreSpecifications).map(x -> x.getKeyProperties()).distinct().count() == coreSpecifications.length}
      */
-    public SocketSpecification(List<CoreSpecification> coreSpecifications, Map<String, Object> properties) {
+    public SocketSpecification(CoreSpecification[] coreSpecifications, Map<String, Object> properties) {
         super(properties, KEY_NAMES);
         
         Validate.notNull(coreSpecifications);
@@ -75,9 +77,9 @@ public final class SocketSpecification extends Specification {
         isNonFractional(socketId);
         isAtLeast0(socketId);
         
-        Validate.isTrue(coreSpecifications.stream().map(x -> x.getProperties()).distinct().count() == coreSpecifications.size());
+        Validate.isTrue(stream(coreSpecifications).map(x -> x.getProperties()).distinct().count() == coreSpecifications.length);
         
-        this.coreSpecifications = (UnmodifiableList<CoreSpecification>) unmodifiableList(new ArrayList<>(coreSpecifications));
+        this.coreSpecifications = (UnmodifiableList<CoreSpecification>) unmodifiableList(new ArrayList<>(asList(coreSpecifications)));
     }
     
     /**

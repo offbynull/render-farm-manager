@@ -20,7 +20,7 @@ import com.offbynull.rfm.host.model.expression.Expression;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast1;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
 import java.util.ArrayList;
-import java.util.List;
+import static java.util.Arrays.asList;
 import org.apache.commons.collections4.list.UnmodifiableList;
 import static org.apache.commons.collections4.list.UnmodifiableList.unmodifiableList;
 import org.apache.commons.lang3.Validate;
@@ -40,13 +40,13 @@ public final class CoreRequirement extends Requirement {
      * @param cpuRequirements CPU requirements
      * @throws NullPointerException if any argument other than {@code count} is {@code null}
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
-     * {@code !cpuRequirements.contains(null)},
+     * {@code stream(cpuRequirements).noneMatch(r -> r == null)},
      * {@code count != null && NumberCheckUtils.isAtLeast1(count.getStart())},
      * {@code count != null && NumberCheckUtils.isNonFractional(count.getStart())},
      * {@code count != null && NumberCheckUtils.isNonFractional(count.getEnd())}
      */
     public CoreRequirement(NumberRange count, Expression whereCondition,
-            List<CpuRequirement> cpuRequirements) {
+            CpuRequirement[] cpuRequirements) {
         super(count, whereCondition);
         
         Validate.notNull(cpuRequirements);
@@ -58,7 +58,7 @@ public final class CoreRequirement extends Requirement {
             isNonFractional(count.getEnd());
         }
         
-        this.cpuRequirements = (UnmodifiableList<CpuRequirement>) unmodifiableList(new ArrayList<>(cpuRequirements));
+        this.cpuRequirements = (UnmodifiableList<CpuRequirement>) unmodifiableList(new ArrayList<>(asList(cpuRequirements)));
     }
 
     /**

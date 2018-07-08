@@ -20,7 +20,7 @@ import com.offbynull.rfm.host.model.expression.Expression;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast1;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
 import java.util.ArrayList;
-import java.util.List;
+import static java.util.Arrays.asList;
 import org.apache.commons.collections4.list.UnmodifiableList;
 import static org.apache.commons.collections4.list.UnmodifiableList.unmodifiableList;
 import org.apache.commons.lang3.Validate;
@@ -46,22 +46,22 @@ public final class HostRequirement extends Requirement {
      * @param mountRequirements mount requirements
      * @throws NullPointerException if any argument is {@code null}
      * @throws IllegalArgumentException if any of the following conditions do NOT evaluate to true:
-     * {@code !socketRequirements.contains(null)},
-     * {@code !gpuRequirements.contains(null)},
-     * {@code !ramRequirements.contains(null)},
-     * {@code !mountRequirements.contains(null)},
+     * {@code stream(socketRequirements).noneMatch(r -> r == null)},
+     * {@code stream(gpuRequirements).noneMatch(r -> r == null)},
+     * {@code stream(ramRequirements).noneMatch(r -> r == null)},
+     * {@code stream(mountRequirements).noneMatch(r -> r == null)},
      * {@code NumberCheckUtils.isAtLeast1(count.getStart())},
      * {@code NumberCheckUtils.isNonFractional(count.getStart())},
      * {@code NumberCheckUtils.isNonFractional(count.getEnd())}
      */
     public HostRequirement(NumberRange count, Expression whereCondition,
-            List<SocketRequirement> socketRequirements,
-            List<GpuRequirement> gpuRequirements,
-            List<RamRequirement> ramRequirements,
-            List<MountRequirement> mountRequirements) {
+            SocketRequirement[] socketRequirements,
+            GpuRequirement[] gpuRequirements,
+            RamRequirement[] ramRequirements,
+            MountRequirement[] mountRequirements) {
         super(count, whereCondition);
         
-        Validate.notNull(count, "Host requirement needs to have a count");
+        Validate.notNull(count, "Host requirement must have a count");
         
         Validate.notNull(socketRequirements);
         Validate.notNull(gpuRequirements);
@@ -92,10 +92,10 @@ public final class HostRequirement extends Requirement {
 //                && ramRequirements.get(0).getNumberRange().getEnd().compareTo(ONE) == 0,
 //                "Exactly 1 of [ram] selection required with range of [1,1]");
         
-        this.socketRequirements = (UnmodifiableList<SocketRequirement>) unmodifiableList(new ArrayList<>(socketRequirements));
-        this.gpuRequirements = (UnmodifiableList<GpuRequirement>) unmodifiableList(new ArrayList<>(gpuRequirements));
-        this.ramRequirements = (UnmodifiableList<RamRequirement>) unmodifiableList(new ArrayList<>(ramRequirements));
-        this.mountRequirements = (UnmodifiableList<MountRequirement>) unmodifiableList(new ArrayList<>(mountRequirements));
+        this.socketRequirements = (UnmodifiableList<SocketRequirement>) unmodifiableList(new ArrayList<>(asList(socketRequirements)));
+        this.gpuRequirements = (UnmodifiableList<GpuRequirement>) unmodifiableList(new ArrayList<>(asList(gpuRequirements)));
+        this.ramRequirements = (UnmodifiableList<RamRequirement>) unmodifiableList(new ArrayList<>(asList(ramRequirements)));
+        this.mountRequirements = (UnmodifiableList<MountRequirement>) unmodifiableList(new ArrayList<>(asList(mountRequirements)));
     }
 
     /**

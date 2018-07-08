@@ -25,7 +25,6 @@ import com.offbynull.rfm.host.model.requirement.MountRequirement;
 import com.offbynull.rfm.host.model.requirement.GpuRequirement;
 import com.offbynull.rfm.host.model.requirement.HostRequirement;
 import com.offbynull.rfm.host.model.requirement.RamRequirement;
-import static java.util.Arrays.asList;
 import org.apache.commons.lang3.Validate;
 
 final class InternalRequirementFactory {
@@ -42,14 +41,14 @@ final class InternalRequirementFactory {
             GpuRequirement[] gpuRequirements,
             RamRequirement[] ramRequirements,
             MountRequirement[] mountRequirements) {
-        Validate.isTrue(count != null, "Host must speecify count");
+        Validate.isTrue(count != null, "Host must specify count");
         Validate.isTrue(capacityRange == null, "No capacity required");
         
         return new HostRequirement(count, whereCondition,
-                asList(socketRequirements),
-                asList(gpuRequirements),
-                asList(ramRequirements),
-                asList(mountRequirements));
+                socketRequirements,
+                gpuRequirements,
+                ramRequirements,
+                mountRequirements);
     }
 
     public static SocketRequirement socket(
@@ -60,7 +59,7 @@ final class InternalRequirementFactory {
         Validate.isTrue(capacityRange == null, "No capacity required");
         
         return new SocketRequirement(count, whereCondition,
-                asList(coreRequirements));
+                coreRequirements);
     }
 
     public static CoreRequirement core(
@@ -71,7 +70,7 @@ final class InternalRequirementFactory {
         Validate.isTrue(capacityRange == null, "No capacity required");
         
         return new CoreRequirement(count, whereCondition,
-                asList(cpuRequirements));
+                cpuRequirements);
     }
 
     public static CpuRequirement cpu(
