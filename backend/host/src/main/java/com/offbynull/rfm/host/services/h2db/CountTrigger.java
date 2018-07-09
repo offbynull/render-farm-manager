@@ -10,7 +10,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.h2.api.Trigger;
 
-abstract class CountTrigger implements Trigger {
+// MUST BE PUBLIC AND NOT INNERCLASS -- OTHERWISE H2 TRIGGER WON'T WORK
+public final class CountTrigger implements Trigger {
     private final String name;
 
     public CountTrigger(String name) {

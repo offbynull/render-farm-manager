@@ -11,8 +11,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import static java.util.Arrays.asList;
-import static java.util.Arrays.copyOfRange;
 import static java.util.Arrays.stream;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -249,9 +247,15 @@ final class InternalUtils {
         Class<?>[] constructorParams = constructor.getParameterTypes();
         
         // split out child specification parameters
-        int lastIdx = asList(constructorParams).lastIndexOf(specificationCls) + 1; // children must be first
-        Class<?>[] specParams = copyOfRange(constructorParams, 0, lastIdx);
-        Validate.validState(stream(specParams).allMatch(s -> isAssignable(s, Specification.class)));
+        Class<?>[] specParams = stream(constructorParams)
+                .filter(p -> isAssignable(p, Specification[].class))
+                .map(p -> p.getComponentType())
+                .toArray(len -> new Class<?>[len]);
+        if (specParams.length > 0) { // children must be first params in constructor -- this block checks for this
+            int lastIdx = specParams.length - 1;
+            Validate.validState(specParams[0] == constructorParams[0].getComponentType());
+            Validate.validState(specParams[lastIdx] == constructorParams[lastIdx].getComponentType());
+        }
         
         // add to set and return
         Set<Class<? extends Specification>> specChildTypes = new LinkedHashSet<>();
