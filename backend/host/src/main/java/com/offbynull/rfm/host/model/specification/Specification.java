@@ -57,7 +57,8 @@ public abstract class Specification {
         Map<String, Object> keyProps = new HashMap<>(normalizedProperties);
         keyProps.keySet().retainAll(keys);
         Validate.isTrue(keyProps.keySet().equals(keys), "Key properties are missing: %s vs %s", keys, keyProps.keySet());
-        this.properties = (UnmodifiableMap<String, Object>) unmodifiableMap(keyProps);
+        
+        this.properties = (UnmodifiableMap<String, Object>) unmodifiableMap(normalizedProperties);
     }
     
     /**

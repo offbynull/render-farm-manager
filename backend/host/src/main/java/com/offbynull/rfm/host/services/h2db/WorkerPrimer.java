@@ -78,14 +78,19 @@ final class WorkerPrimer {
         String fkName = getSpecificationName(parentSpecCls);
         String[] fk = getSpecificationFullKeyFromClasses(specChain).stream().toArray(len -> new String[len]);
         
+        // for child spec types
         for (Class<? extends Specification> childSpecCls : getSpecificationChildClasses(parentSpecCls)) {
             specChain.addLast(childSpecCls);
             
+            // create tables for child
             String pkName = getSpecificationName(childSpecCls);
             String[] pk = getSpecificationFullKeyFromClasses(specChain).stream().toArray(len -> new String[len]);
             boolean capacityEnabled = isAssignable(childSpecCls, CapacityEnabledSpecification.class);
             createTableSpecSql(conn, pkName, pk, fkName, fk, capacityEnabled, true);
             createTableSpecPropSql(conn, pkName, pk);
+            
+            // recurse into child
+            recursiveCreateTable(conn, specChain);
             
             specChain.removeLast();
         }
