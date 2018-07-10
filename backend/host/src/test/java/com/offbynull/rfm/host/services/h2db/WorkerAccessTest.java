@@ -4,10 +4,12 @@ import com.offbynull.rfm.host.model.specification.HostSpecification;
 import com.offbynull.rfm.host.service.Worker;
 import static com.offbynull.rfm.host.testutils.TestUtils.loadSpecResource;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.After;
+import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -41,9 +43,15 @@ public final class WorkerAccessTest {
     @Test
     public void mustWriteAndRead() throws SQLException, ClassNotFoundException, IOException {
         HostSpecification hostSpec = (HostSpecification) loadSpecResource("/com/offbynull/rfm/host/services/h2db/basic");
+        String host = (String) hostSpec.getProperties().get("s_host");
+        int port = ((BigDecimal) hostSpec.getProperties().get("n_port")).intValueExact();
+        
         Worker worker = new Worker(hostSpec);
         
         WorkerPrimer.prime(dataSource);
         WorkerSetter.setWorker(dataSource, worker);
+        Worker workerInDb = WorkerGetter.getWorker(dataSource, host, port);
+        
+        assertEquals(worker, workerInDb);
     }
 }

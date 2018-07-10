@@ -123,7 +123,7 @@ public final class CoreSpecification extends Specification {
         if (!Objects.equals(this.cpuSpecifications, other.cpuSpecifications)) {
             return false;
         }
-        return true;
+        return super.equals(obj);
     }
     
 }

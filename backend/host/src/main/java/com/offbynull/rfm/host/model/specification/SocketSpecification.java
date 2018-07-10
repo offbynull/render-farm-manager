@@ -116,14 +116,11 @@ public final class SocketSpecification extends Specification {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        if (!super.equals(obj)) {
-            return false;
-        }
         final SocketSpecification other = (SocketSpecification) obj;
         if (!Objects.equals(this.coreSpecifications, other.coreSpecifications)) {
             return false;
         }
-        return true;
+        return super.equals(obj);
     }
     
 }

@@ -66,7 +66,7 @@ public final class MountSpecification extends Specification implements CapacityE
         
         Validate.notEmpty(target);
         isAtLeast0(capacity);
-        this.capacity = capacity;
+        this.capacity = capacity.stripTrailingZeros();
     }
     
     @Override
@@ -84,7 +84,9 @@ public final class MountSpecification extends Specification implements CapacityE
     
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return super.hashCode() ^ Objects.hash(
+                this.capacity
+        );
     }
 
     @Override

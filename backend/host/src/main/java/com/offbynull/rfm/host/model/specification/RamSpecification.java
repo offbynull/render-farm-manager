@@ -69,7 +69,7 @@ public final class RamSpecification extends Specification implements CapacityEna
         isNonFractional(ramId);
         isAtLeast0(ramId);
         isAtLeast0(capacity);
-        this.capacity = capacity;
+        this.capacity = capacity.stripTrailingZeros();
     }
     
     @Override
@@ -87,7 +87,9 @@ public final class RamSpecification extends Specification implements CapacityEna
     
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return super.hashCode() ^ Objects.hash(
+                this.capacity
+        );
     }
 
     @Override

@@ -66,7 +66,7 @@ public final class GpuSpecification extends Specification implements CapacityEna
         
         Validate.notEmpty(gpuId);
         isAtLeast0(capacity);
-        this.capacity = capacity;
+        this.capacity = capacity.stripTrailingZeros();
     }
     
     @Override
@@ -84,7 +84,9 @@ public final class GpuSpecification extends Specification implements CapacityEna
     
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return super.hashCode() ^ Objects.hash(
+                this.capacity
+        );
     }
 
     @Override

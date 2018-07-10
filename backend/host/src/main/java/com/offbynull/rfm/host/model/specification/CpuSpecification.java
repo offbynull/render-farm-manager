@@ -69,7 +69,7 @@ public final class CpuSpecification extends Specification implements CapacityEna
         isNonFractional(cpuId);
         isAtLeast0(cpuId);
         isAtLeast0(capacity);
-        this.capacity = capacity;
+        this.capacity = capacity.stripTrailingZeros();
     }
 
     @Override
@@ -87,7 +87,9 @@ public final class CpuSpecification extends Specification implements CapacityEna
     
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return super.hashCode() ^ Objects.hash(
+                this.capacity
+        );
     }
 
     @Override

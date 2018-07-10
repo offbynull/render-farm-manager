@@ -203,7 +203,7 @@ public final class HostSpecification extends Specification {
         if (!Objects.equals(this.ramSpecifications, other.ramSpecifications)) {
             return false;
         }
-        return true;
+        return super.equals(obj);
     }
 
     

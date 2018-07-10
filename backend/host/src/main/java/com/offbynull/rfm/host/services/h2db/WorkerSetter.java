@@ -63,22 +63,15 @@ final class WorkerSetter {
         
         Map<String, Object> dbKeyValues = getSpecificationFullKeyValues(specChain);
         Set<String> dbKey = dbKeyValues.keySet(); // NOT the same as key -- this is key of entire specChain, not the individual spec
-        
+
+
+
+        // write spec row
         BigDecimal capacity = getSpecificationCapacity(finalSpec);
-        
         String mergeSpecStr = "merge into " + name + "_spec"
                 + " key(" + dbKey.stream().collect(joining(",")) + ")"
                 + " values(" + dbKey.stream().map(x -> "?").collect(joining(",")) + (capacity != null ? ",?" : "") + ")";
-        String mergePropStr = "merge into " + name + "_prop"
-                + " key(" + dbKey.stream().collect(joining(",")) + ",name)"
-                + " values(" + dbKey.stream().map(x -> "?").collect(joining(",")) + ",?,?,?,?)";
-
-        try (PreparedStatement mergeSpecPs = conn.prepareStatement(mergeSpecStr);
-                PreparedStatement mergePropPs = conn.prepareStatement(mergePropStr)) {
-            Map<String, Object> props = finalSpec.getProperties();
-
-            
-            // write spec row
+        try (PreparedStatement mergeSpecPs = conn.prepareStatement(mergeSpecStr)) {
             int specColIdx = 1;
             for (String keyName : dbKey) {
                 Object keyValue = dbKeyValues.get(keyName);
@@ -91,9 +84,16 @@ final class WorkerSetter {
             }
 
             mergeSpecPs.executeUpdate();
+        }
 
-            
-            // write prop rows
+
+
+        // write prop rows
+        Map<String, Object> props = finalSpec.getProperties();
+        String mergePropStr = "merge into " + name + "_prop"
+                + " key(" + dbKey.stream().collect(joining(",")) + ",name)"
+                + " values(" + dbKey.stream().map(x -> "?").collect(joining(",")) + ",?,?,?,?)";
+        try (PreparedStatement mergePropPs = conn.prepareStatement(mergePropStr)) {
             for (Entry<String, Object> prop : props.entrySet()) {
                 String propName = prop.getKey();
                 Object propValue = prop.getValue();
@@ -104,14 +104,14 @@ final class WorkerSetter {
                     mergePropPs.setObject(propColIdx, keyValue);
                     propColIdx++;
                 }
-                
-                if (key.contains(propName)) { // skip keys -- DONT use dbKeys, we can have props that have the same name as a parent's key 
+
+                if (key.contains(propName)) { // skip keys -- DONT use dbKeys, we can have props that have same name as a parent's key 
                     continue;
                 }
-                
+
                 mergePropPs.setString(propColIdx, propName);
                 propColIdx++;
-                
+
                 Object bVal = null;
                 Object nVal = null;
                 Object sVal = null;
@@ -133,7 +133,7 @@ final class WorkerSetter {
                 mergePropPs.setObject(propColIdx, nVal);
                 propColIdx++;
                 mergePropPs.setObject(propColIdx, sVal);
-                
+
                 mergePropPs.executeUpdate();
             }
         }

@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import static java.util.Arrays.stream;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -196,6 +197,16 @@ final class InternalUtils {
         }
     }
     
+    static Map<String, Object> reduceToSpecificationKey(Class<?> specificationCls, Map<String, Object> map) {
+        Set<String> key = getSpecificationKey(specificationCls);
+        
+        Map<String, Object> keyValues = new HashMap<>(map);
+        keyValues.keySet().retainAll(key);
+        Validate.isTrue(keyValues.keySet().containsAll(key));
+        
+        return keyValues;
+    }
+    
     static Set<String> getSpecificationFullKey(List<Specification> specificationChain) {
         return getSpecificationFullKeyFromClasses(specificationChain.stream().map(s -> s.getClass()).collect(toList()));
     }
@@ -268,27 +279,38 @@ final class InternalUtils {
     static Specification constructSpecification(Class<? extends Specification> specCls, Set<Specification> children,
             Map<String, Object> properties, BigDecimal capacity) {
         Set<Class<? extends Specification>> childClses = getSpecificationChildClasses(specCls);
-        Validate.validState(isAssignable(specCls, CapacityEnabledSpecification.class) && capacity != null);
+        if (isAssignable(specCls, CapacityEnabledSpecification.class)) {
+            Validate.validState(capacity != null);
+        }
 
-        Object[] args = new Object[childClses.size() + (capacity == null ? 0 : 1)];
+        // create args array
+        int argsLen = childClses.size() + 1; // add 1 for the properties map
+        if (capacity != null) {              // add 1 for capacity
+            argsLen++;
+        }
+        Object[] args = new Object[argsLen];
 
+        // add child specs to args
         int idx = 0;
         for (Class<?> childCls : childClses) {
             Object param = children.stream()
                 .filter(child -> isAssignable(child.getClass(), childCls))
                 .map(child -> childCls.cast(child))
-                .toArray();
+                .toArray(len -> (Object[]) Array.newInstance(childCls, len));
             args[idx] = param;
             idx++;
         }
         
-        args[idx] = properties;
-        idx++;
-        
+        // add capacity map to args
         if (capacity != null) {
             args[idx] = capacity;
+            idx++;
         }
         
+        // add properties map to args
+        args[idx] = properties;
+        
+        // construct
         try {
             return invokeConstructor(specCls, args);
         } catch (ReflectiveOperationException ex) {
