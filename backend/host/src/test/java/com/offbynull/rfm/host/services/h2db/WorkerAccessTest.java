@@ -1,5 +1,8 @@
 package com.offbynull.rfm.host.services.h2db;
 
+import com.offbynull.rfm.host.model.specification.HostSpecification;
+import com.offbynull.rfm.host.service.Worker;
+import static com.offbynull.rfm.host.testutils.TestUtils.loadSpecResource;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -33,5 +36,14 @@ public final class WorkerAccessTest {
     @Test
     public void mustPrime() throws SQLException {
         WorkerPrimer.prime(dataSource);
+    }
+    
+    @Test
+    public void mustWriteAndRead() throws SQLException, ClassNotFoundException, IOException {
+        HostSpecification hostSpec = (HostSpecification) loadSpecResource("/com/offbynull/rfm/host/services/h2db/basic");
+        Worker worker = new Worker(hostSpec);
+        
+        WorkerPrimer.prime(dataSource);
+        WorkerSetter.setWorker(dataSource, worker);
     }
 }

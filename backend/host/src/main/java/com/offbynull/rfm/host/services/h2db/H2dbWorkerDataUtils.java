@@ -43,10 +43,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.reflect.MethodUtils;
@@ -130,51 +128,52 @@ final class H2dbWorkerDataUtils {
     }
 
     private static StoredWorker getWorker(Connection conn, String host, int port) throws SQLException {
-        Validate.notNull(conn);
-        Validate.notNull(host);
-        Validate.notEmpty(host);
-        Validate.isTrue(port >= 1 && port <= 65535);
-
-        List<RamSpecification> rams = readSpecs(conn, RamSpecification.class, host, port,
-                (props,capacity) -> new RamSpecification(capacity, props));
-        List<MountSpecification> mounts = readSpecs(conn, MountSpecification.class, host, port,
-                (props,capacity) -> new MountSpecification(capacity, props));
-        List<GpuSpecification> gpus = readSpecs(conn, GpuSpecification.class, host, port,
-                (props,capacity) -> new GpuSpecification(capacity, props));
-        List<CpuSpecification> cpus = readSpecs(conn, CpuSpecification.class, host, port,
-                (props,capacity) -> new CpuSpecification(capacity, props));
-        List<CoreSpecification> cores = readSpecs(conn, CoreSpecification.class, host, port,
-                (props,capacity) -> new CoreSpecification(
-                        cpus.stream()
-                                .filter(x -> Objects.equals(props.get("n_cpu_id"), x.getProperties().get("n_cpu_id")))
-                                .collect(toList()),
-                        props));
-        List<SocketSpecification> sockets = readSpecs(conn, SocketSpecification.class, host, port,
-                (props,capacity) -> new SocketSpecification(
-                        cores.stream()
-                                .filter(x -> Objects.equals(props.get("n_socket_id"), x.getProperties().get("n_socket_id")))
-                                .collect(toList()),
-                        props));
-        List<HostSpecification> hosts = readSpecs(conn, HostSpecification.class, host, port,
-                (props,capacity) -> new HostSpecification(
-                        sockets,
-                        gpus,
-                        mounts,
-                        rams,
-                        props));
-
-        if (hosts.isEmpty()) {
-            return null;
-        }
-        
-        try {
-            Worker worker = new Worker(hosts.get(0));
-            StoredWorker storedWorker = new StoredWorker(host + ":" + port, worker);
-            return storedWorker;
-        } catch (RuntimeException re) {
-            // the work data is invalid, return null and maybe log
-            return null;
-        }
+        throw new UnsupportedOperationException();
+//        Validate.notNull(conn);
+//        Validate.notNull(host);
+//        Validate.notEmpty(host);
+//        Validate.isTrue(port >= 1 && port <= 65535);
+//
+//        List<RamSpecification> rams = readSpecs(conn, RamSpecification.class, host, port,
+//                (props,capacity) -> new RamSpecification(capacity, props));
+//        List<MountSpecification> mounts = readSpecs(conn, MountSpecification.class, host, port,
+//                (props,capacity) -> new MountSpecification(capacity, props));
+//        List<GpuSpecification> gpus = readSpecs(conn, GpuSpecification.class, host, port,
+//                (props,capacity) -> new GpuSpecification(capacity, props));
+//        List<CpuSpecification> cpus = readSpecs(conn, CpuSpecification.class, host, port,
+//                (props,capacity) -> new CpuSpecification(capacity, props));
+//        List<CoreSpecification> cores = readSpecs(conn, CoreSpecification.class, host, port,
+//                (props,capacity) -> new CoreSpecification(
+//                        cpus.stream()
+//                                .filter(x -> Objects.equals(props.get("n_cpu_id"), x.getProperties().get("n_cpu_id")))
+//                                .collect(toList()),
+//                        props));
+//        List<SocketSpecification> sockets = readSpecs(conn, SocketSpecification.class, host, port,
+//                (props,capacity) -> new SocketSpecification(
+//                        cores.stream()
+//                                .filter(x -> Objects.equals(props.get("n_socket_id"), x.getProperties().get("n_socket_id")))
+//                                .collect(toList()),
+//                        props));
+//        List<HostSpecification> hosts = readSpecs(conn, HostSpecification.class, host, port,
+//                (props,capacity) -> new HostSpecification(
+//                        sockets,
+//                        gpus,
+//                        mounts,
+//                        rams,
+//                        props));
+//
+//        if (hosts.isEmpty()) {
+//            return null;
+//        }
+//        
+//        try {
+//            Worker worker = new Worker(hosts.get(0));
+//            StoredWorker storedWorker = new StoredWorker(host + ":" + port, worker);
+//            return storedWorker;
+//        } catch (RuntimeException re) {
+//            // the work data is invalid, return null and maybe log
+//            return null;
+//        }
     }
 
     private static StoredWorker getWorker(Connection conn, String host, BigDecimal port) throws SQLException {
