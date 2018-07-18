@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import static java.util.stream.Collectors.joining;
-import javax.sql.DataSource;
 import org.apache.commons.lang3.Validate;
 
 final class WorkerGetter {
@@ -32,31 +31,29 @@ final class WorkerGetter {
         // do nothing
     }
     
-    public static Worker getWorker(DataSource dataSource, String host, int port) throws SQLException {
-        Validate.notNull(dataSource);
+    public static Worker getWorker(Connection conn, String host, int port) throws SQLException {
+        Validate.notNull(conn);
         Validate.notNull(host);
         Validate.notEmpty(host);
         Validate.isTrue(port >= 1 && port <= 65535);
-        
-        try (Connection conn = dataSource.getConnection()) {
-            conn.setAutoCommit(false);
-            conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
-            
-            Map<String, Object> dbKeyValues = new LinkedHashMap<>();
-            dbKeyValues.put("s_host", host);
-            dbKeyValues.put("n_port", BigDecimal.valueOf(port));
-            
-            Set<String> expectedKeys = getSpecificationKey(HostSpecification.class);
-            Validate.isTrue(dbKeyValues.keySet().equals(expectedKeys));
-            
-            HostSpecification hostSpecification = (HostSpecification) readSpec(conn, dbKeyValues, HostSpecification.class);
-            if (hostSpecification == null) {
-                return null;
-            }
-            
-            Worker worker = new Worker(hostSpecification);
-            return worker;
+
+        conn.setAutoCommit(false);
+        conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
+
+        Map<String, Object> dbKeyValues = new LinkedHashMap<>();
+        dbKeyValues.put("s_host", host);
+        dbKeyValues.put("n_port", BigDecimal.valueOf(port));
+
+        Set<String> expectedKeys = getSpecificationKey(HostSpecification.class);
+        Validate.isTrue(dbKeyValues.keySet().equals(expectedKeys));
+
+        HostSpecification hostSpecification = (HostSpecification) readSpec(conn, dbKeyValues, HostSpecification.class);
+        if (hostSpecification == null) {
+            return null;
         }
+
+        Worker worker = new Worker(hostSpecification);
+        return worker;
     }
 
     private static Specification readSpec(
