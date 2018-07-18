@@ -24,6 +24,8 @@ import com.offbynull.rfm.host.service.HostService;
 import com.offbynull.rfm.host.service.StoredWork;
 import com.offbynull.rfm.host.service.StoredWorker;
 import java.io.IOException;
+import java.sql.Connection;
+import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
@@ -78,17 +80,47 @@ public class H2dbHostService implements HostService {
 
     @Override
     public void updateWorker(Worker worker) throws IOException {
-        H2dbWorkerDataUtils.updateWorker(dataSource, worker);
+        Validate.notNull(worker);
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
+            
+            WorkerSetter.setWorker(conn, worker);
+            
+            conn.commit();
+        } catch (SQLException sqle) {
+            throw new IOException(sqle);
+        }
     }
 
     @Override
     public void deleteWorker(String host, int port) throws IOException {
-        H2dbWorkerDataUtils.deleteWorker(dataSource, host, port);
+        Validate.notNull(host);
+        Validate.notEmpty(host);
+        Validate.isTrue(port >= 1 && port <= 65535);
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
+            
+            WorkerDeleter.deleteWorker(conn, host, port);
+            
+            conn.commit();
+        } catch (SQLException sqle) {
+            throw new IOException(sqle);
+        }
     }
 
     @Override
     public StoredWorker getWorker(String host, int port) throws IOException {
-        return H2dbWorkerDataUtils.getWorker(dataSource, host, port);
+        Validate.notNull(host);
+        Validate.notEmpty(host);
+        Validate.isTrue(port >= 1 && port <= 65535);
+        try {
+            Worker worker = WorkerGetter.getWorker(dataSource, host, port);
+            return new StoredWorker(host + ":" + port, worker);
+        } catch (SQLException sqle) {
+            throw new IOException(sqle);
+        }
     }
 
     @Override

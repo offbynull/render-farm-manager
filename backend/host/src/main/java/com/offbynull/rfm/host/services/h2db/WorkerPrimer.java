@@ -44,6 +44,7 @@ final class WorkerPrimer {
             LinkedHashSet<String> names = new LinkedHashSet<>();
             LinkedHashSet<String> capacityEnabledNames = new LinkedHashSet<>();
             recursiveCollectNames(specChainClses, names, capacityEnabledNames);
+            createTableWorkerLockSql(conn);
             createTableWorkerSql(conn,
                     names.stream().toArray(len -> new String[len]),
                     capacityEnabledNames.stream().toArray(len -> new String[len]));
@@ -211,6 +212,23 @@ final class WorkerPrimer {
             String table = tableStmtElems.stream().collect(Collectors.joining(
                     ",\n",
                     "CREATE TABLE IF NOT EXISTS " + pkName + "_prop(\n",
+                    "\n)")
+            );
+            stmt.execute(table);
+        }
+    }
+    
+    private static void createTableWorkerLockSql(Connection conn) throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            List<String> tableStmtElems = new ArrayList<>();
+
+            tableStmtElems.add("s_host VARCHAR(2048) NOT NULL");
+            tableStmtElems.add("n_port NUMBER(38,10) NOT NULL");
+            tableStmtElems.add("PRIMARY KEY(s_host,n_port)");
+
+            String table = tableStmtElems.stream().collect(Collectors.joining(
+                    ",\n",
+                    "CREATE TABLE IF NOT EXISTS worker(\n",
                     "\n)")
             );
             stmt.execute(table);

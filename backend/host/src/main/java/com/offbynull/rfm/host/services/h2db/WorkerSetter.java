@@ -10,7 +10,6 @@ import static com.offbynull.rfm.host.services.h2db.InternalUtils.getSpecificatio
 import static com.offbynull.rfm.host.services.h2db.InternalUtils.getSpecificationName;
 import java.math.BigDecimal;
 import java.sql.Connection;
-import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.LinkedList;
@@ -19,29 +18,38 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import static java.util.stream.Collectors.joining;
-import javax.sql.DataSource;
 import org.apache.commons.lang3.Validate;
 
 final class WorkerSetter {
     private WorkerSetter() {
         // do nothing
     }
-    
-    public static void setWorker(DataSource dataSource, Worker worker) throws SQLException {
-        Validate.notNull(dataSource);
+ 
+    public static void setWorker(Connection conn, Worker worker) throws SQLException {
+        Validate.notNull(conn);
         Validate.notNull(worker);
+
+        HostSpecification hostSpecification = worker.getHostSpecification();
+
+        LinkedList<Specification> specChain = new LinkedList<>();
+        specChain.add(hostSpecification);
+
+        deleteSpec(conn, specChain); // delete spec
+        recurseWriteSpecs(conn, specChain); // add spec
+    }
+
+    private static void deleteSpec(Connection conn, LinkedList<Specification> specChain) throws SQLException {
+        Specification finalSpec = specChain.get(specChain.size() - 1);
         
-        try (Connection conn = dataSource.getConnection()) {
-            conn.setAutoCommit(false);
-            conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
-            
-            HostSpecification hostSpecification = worker.getHostSpecification();
-            
-            LinkedList<Specification> specChain = new LinkedList<>();
-            specChain.add(hostSpecification);
-            recurseWriteSpecs(conn, specChain);
-            
-            conn.commit();
+        String name = getSpecificationName(finalSpec);
+        
+        Map<String, Object> dbKeyValues = getSpecificationFullKeyValues(specChain);
+        Set<String> dbKey = dbKeyValues.keySet();
+        
+        // because of fk bindings, this will also delete props + children and their props (recursively)
+        String deleteSpecStr = "delete from " + name + "_spec where " + dbKey.stream().map(x -> x+"=?").collect(joining(" and "));
+        try (PreparedStatement deleteSpecPs = conn.prepareStatement(deleteSpecStr)) {
+            deleteSpecPs.executeUpdate();
         }
     }
     
@@ -68,8 +76,7 @@ final class WorkerSetter {
 
         // write spec row
         BigDecimal capacity = getSpecificationCapacity(finalSpec);
-        String mergeSpecStr = "merge into " + name + "_spec"
-                + " key(" + dbKey.stream().collect(joining(",")) + ")"
+        String mergeSpecStr = "insert into " + name + "_spec"
                 + " values(" + dbKey.stream().map(x -> "?").collect(joining(",")) + (capacity != null ? ",?" : "") + ")";
         try (PreparedStatement mergeSpecPs = conn.prepareStatement(mergeSpecStr)) {
             int specColIdx = 1;
@@ -90,8 +97,7 @@ final class WorkerSetter {
 
         // write prop rows
         Map<String, Object> props = finalSpec.getProperties();
-        String mergePropStr = "merge into " + name + "_prop"
-                + " key(" + dbKey.stream().collect(joining(",")) + ",name)"
+        String mergePropStr = "insert into " + name + "_prop"
                 + " values(" + dbKey.stream().map(x -> "?").collect(joining(",")) + ",?,?,?,?)";
         try (PreparedStatement mergePropPs = conn.prepareStatement(mergePropStr)) {
             for (Entry<String, Object> prop : props.entrySet()) {
