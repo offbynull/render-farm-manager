@@ -17,7 +17,8 @@ final class WorkerDeleter {
         Validate.notEmpty(host);
         Validate.isTrue(port >= 1 && port <= 65535);
         
-        try (PreparedStatement ps = conn.prepareStatement("DELETE FROM worker WHERE s_host=? AND n_port=?")) {
+        // will delete worker
+        try (PreparedStatement ps = conn.prepareStatement("DELETE FROM host_spec WHERE s_host=? AND n_port=?")) {
             ps.setString(1, host);
             ps.setBigDecimal(2, BigDecimal.valueOf(port));
             ps.executeUpdate();
