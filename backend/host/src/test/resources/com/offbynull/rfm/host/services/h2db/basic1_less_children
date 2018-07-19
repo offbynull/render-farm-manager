@@ -1,5 +1,5 @@
 host{
-  s_host:localhost
+  s_host:basic1
   n_port:12345
   s_facility:US-EAST
   n_host_class:5
@@ -37,8 +37,4 @@ host{
     n_available:1111111111110
     n_total:1111111111111
   }
-  s_host:localhost
-  n_port:12345
-  s_facility:US-SOUTH
-  n_host_class:5
 }

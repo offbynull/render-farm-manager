@@ -49,6 +49,13 @@ final class WorkerSetter {
         // because of fk bindings, this will also delete props + children and their props (recursively)
         String deleteSpecStr = "delete from " + name + "_spec where " + dbKey.stream().map(x -> x+"=?").collect(joining(" and "));
         try (PreparedStatement deleteSpecPs = conn.prepareStatement(deleteSpecStr)) {
+            int specColIdx = 1;
+            for (String keyName : dbKey) {
+                Object keyValue = dbKeyValues.get(keyName);
+                deleteSpecPs.setObject(specColIdx, keyValue);
+                specColIdx++;
+            }
+            
             deleteSpecPs.executeUpdate();
         }
     }

@@ -23,14 +23,16 @@ import com.offbynull.rfm.host.service.Direction;
 import com.offbynull.rfm.host.service.HostService;
 import com.offbynull.rfm.host.service.StoredWork;
 import com.offbynull.rfm.host.service.StoredWorker;
+import com.offbynull.rfm.host.services.h2db.InternalUtils.DecomposedWorkerKey;
+import static com.offbynull.rfm.host.services.h2db.InternalUtils.fromWorkerKey;
+import static com.offbynull.rfm.host.services.h2db.InternalUtils.toWorkerKey;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.sql.Connection;
 import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import static java.util.stream.Collectors.toList;
 import javax.sql.DataSource;
 import org.apache.commons.lang3.Validate;
 
@@ -126,51 +128,47 @@ public class H2dbHostService implements HostService {
                 return null;
             }
             
-            return new StoredWorker(host + ":" + port, worker);
+            String key = toWorkerKey(host, port);
+            return new StoredWorker(key, worker);
         } catch (SQLException sqle) {
             throw new IOException(sqle);
         }
     }
 
     @Override
-    public List<StoredWorker> getWorkers(String key, Direction direction, int max) throws IOException {
-        Validate.notNull(key);
+    public List<StoredWorker> scanWorkers(String key, Direction direction, int max) throws IOException {
+        // key CAN be null -- if it is null it means that you're setarting the scan (there is no previous point to continue from)
         Validate.notNull(direction);
         Validate.isTrue(max >= 0);
         
-        if (max <= 250) {
+        if (max <= 255) {
             throw new IOException("Max too high"); // not a real restriction, but we want to avoid clobbering the db so cap at 250
-        }
-        
-        int splitIdx = key.lastIndexOf(':');
-        if (splitIdx == -1) {
-            throw new IOException("Bad key");
-        }
-        String host = key.substring(0, splitIdx);
-        int port;
-        try {
-            port = Integer.valueOf(key.substring(splitIdx + 1));
-        } catch (NumberFormatException nfe) {
-            throw new IOException("Bad key", nfe);
-        }
-        try {
-            Validate.notEmpty(host);
-            Validate.isTrue(port >= 1 && port <= 65535);
-        } catch (IllegalArgumentException iae) {
-            throw new IOException("Bad key", iae);
         }
 
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
             conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
             
-            List<Worker> worker = WorkerScanner.getWorkers(conn, host, port, direction, max);
+            List<String> nextKeys;
+            if (key == null) {
+                nextKeys = WorkerScanner.scanWorkers(conn, direction, max);
+            } else {
+                nextKeys = WorkerScanner.scanWorkers(conn, key, direction, max);
+            }
             
-            return worker.stream().map(w -> {
-                String workerHost = (String) w.getHostSpecification().getProperties().get("s_host");
-                BigDecimal workerPort = (BigDecimal) w.getHostSpecification().getProperties().get("n_port");
-                return new StoredWorker(workerHost + ":" + workerPort, w);
-            }).collect(toList());
+            List<StoredWorker> nextStoredWorkers = new ArrayList<>(nextKeys.size());
+            for (String nextKey : nextKeys) {
+                DecomposedWorkerKey decomposedLastKey = fromWorkerKey(nextKey);
+                String nextHost = decomposedLastKey.getHost();
+                int nextPort = decomposedLastKey.getPort();
+                
+                Worker nextWorker = WorkerGetter.getWorker(conn, nextHost, nextPort);
+                StoredWorker nextStoredWorker = new StoredWorker(nextKey, nextWorker);
+                
+                nextStoredWorkers.add(nextStoredWorker);
+            }
+            
+            return nextStoredWorkers;
         } catch (SQLException sqle) {
             throw new IOException(sqle);
         }

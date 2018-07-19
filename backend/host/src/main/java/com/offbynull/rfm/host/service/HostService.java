@@ -126,7 +126,7 @@ public interface HostService {
      * {@code max >= 0}
      * @throws IOException if error occurs with the backend datastore
      */
-    List<StoredWorker> getWorkers(String key, Direction direction, int max) throws IOException;
+    List<StoredWorker> scanWorkers(String key, Direction direction, int max) throws IOException;
     
     
     

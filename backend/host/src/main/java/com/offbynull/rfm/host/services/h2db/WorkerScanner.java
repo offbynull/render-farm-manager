@@ -3,11 +3,12 @@ package com.offbynull.rfm.host.services.h2db;
 import com.offbynull.rfm.host.service.Direction;
 import static com.offbynull.rfm.host.service.Direction.BACKWARD;
 import static com.offbynull.rfm.host.service.Direction.FORWARD;
-import com.offbynull.rfm.host.service.Worker;
-import static com.offbynull.rfm.host.services.h2db.WorkerGetter.getWorker;
+import com.offbynull.rfm.host.services.h2db.InternalUtils.DecomposedWorkerKey;
+import static com.offbynull.rfm.host.services.h2db.InternalUtils.fromWorkerKey;
+import static com.offbynull.rfm.host.services.h2db.InternalUtils.toWorkerKey;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Connection;
-import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -16,46 +17,81 @@ import java.util.List;
 import org.apache.commons.lang3.Validate;
 
 final class WorkerScanner {
-    static List<Worker> getWorkers(Connection conn, String lastHost, int lastPort, Direction direction, int max) throws SQLException {
+    
+    static List<String> scanWorkers(Connection conn, Direction direction, int max) throws SQLException {
         Validate.notNull(conn);
-        // key CAN be null -- it means start at the beginning
         Validate.notNull(direction);
-        Validate.notEmpty(lastHost);
-        Validate.isTrue(lastPort >= 1 && lastPort <= 65535);
         Validate.isTrue(max >= 0);
         
         String selectWorkStr = "select s_host,n_port from host_spec";
         switch (direction) {
             case FORWARD:
-                selectWorkStr += " where s_host>=? and n_port>? order by s_host,n_port asc";
+                selectWorkStr += " order by s_host asc,n_port asc";
                 break;
             case BACKWARD:
-                selectWorkStr += " where s_host<=? and n_port<? order by s_host,n_port desc";
+                selectWorkStr += " order by s_host desc,n_port desc";
                 break;
             default:
                 throw new IllegalStateException(); // should never happen
         }
+        selectWorkStr += " limit ?";
         
-
-        conn.setAutoCommit(false);
-        conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
+        try (PreparedStatement selectWorkIdPs = conn.prepareStatement(selectWorkStr)) {
+            selectWorkIdPs.setInt(1, max);
+            return executeAndRead(selectWorkIdPs);
+        }
+    }
+    
+    static List<String> scanWorkers(Connection conn, String lastKey, Direction direction, int max) throws SQLException, IOException {
+        Validate.notNull(conn);
+        Validate.notNull(lastKey);
+        Validate.notNull(direction);
+        Validate.notEmpty(lastKey);
+        Validate.isTrue(max >= 0);
+        
+        DecomposedWorkerKey decomposedLastKey = fromWorkerKey(lastKey);
+        String lastHost = decomposedLastKey.getHost();
+        int lastPort = decomposedLastKey.getPort();
+        
+        String selectWorkStr = "select s_host,n_port from host_spec";
+        switch (direction) {
+            case FORWARD:
+                selectWorkStr += " where (s_host=? and n_port>?) or (s_host>?) order by s_host asc,n_port asc";
+                break;
+            case BACKWARD:
+                selectWorkStr += " where (s_host=? and n_port<?) or (s_host<?) order by s_host desc,n_port desc";
+                break;
+            default:
+                throw new IllegalStateException(); // should never happen
+        }
+        selectWorkStr += " limit ?";
 
         try (PreparedStatement selectWorkIdPs = conn.prepareStatement(selectWorkStr)) {
             selectWorkIdPs.setString(1, lastHost);
             selectWorkIdPs.setBigDecimal(2, BigDecimal.valueOf(lastPort));
-            try (ResultSet selectWorkIdRs = selectWorkIdPs.executeQuery()) {
-                List<Worker> ret = new LinkedList<>();
-                while (selectWorkIdRs.next() && ret.size() < max) {
-                    String host = selectWorkIdRs.getString("s_host");
-                    BigDecimal port = selectWorkIdRs.getBigDecimal("n_port");
+            selectWorkIdPs.setString(3, lastHost);
+            selectWorkIdPs.setInt(4, max);
+            return executeAndRead(selectWorkIdPs);
+        }
+    }
 
-                    Worker worker = getWorker(conn, host, port.intValueExact());
-                    if (worker != null) { // if worker was removed or worker had bad attributes, skip.
-                        ret.add(worker);
-                    }
+    private static List<String> executeAndRead(PreparedStatement selectWorkIdPs) throws SQLException {
+        try (ResultSet selectWorkIdRs = selectWorkIdPs.executeQuery()) {
+            List<String> ret = new LinkedList<>();
+            while (selectWorkIdRs.next()) {
+                String host = selectWorkIdRs.getString("s_host");
+                int port;
+                try {
+                    port = selectWorkIdRs.getBigDecimal("n_port").intValueExact();
+                } catch (ArithmeticException ae) {
+                    // log here?
+                    continue;
                 }
-                return ret;
+
+                String key = toWorkerKey(host, port);
+                ret.add(key);
             }
+            return ret;
         }
     }
 }

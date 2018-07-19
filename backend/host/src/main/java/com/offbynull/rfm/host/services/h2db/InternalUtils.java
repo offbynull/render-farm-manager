@@ -3,6 +3,7 @@ package com.offbynull.rfm.host.services.h2db;
 import com.offbynull.rfm.host.model.requirement.Requirement;
 import com.offbynull.rfm.host.model.specification.CapacityEnabledSpecification;
 import com.offbynull.rfm.host.model.specification.Specification;
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -396,5 +397,65 @@ final class InternalUtils {
     
     static Class<?> toArrayClass(Class<?> componentType, int... dimensions) {
         return Array.newInstance(componentType, dimensions).getClass();
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static String toWorkerKey(String host, int port) {
+        return host + ":" + port;
+    }
+    
+    static DecomposedWorkerKey fromWorkerKey(String key) throws IOException {
+        int splitIdx = key.lastIndexOf(':');
+        if (splitIdx == -1) {
+            throw new IOException("Bad key");
+        }
+        
+        String host = key.substring(0, splitIdx);
+        int port;
+        try {
+            port = Integer.valueOf(key.substring(splitIdx + 1));
+        } catch (NumberFormatException nfe) {
+            throw new IOException("Bad key", nfe);
+        }
+        try {
+            Validate.notEmpty(host);
+            Validate.isTrue(port >= 1 && port <= 65535);
+        } catch (IllegalArgumentException iae) {
+            throw new IOException("Bad key", iae);
+        }
+        
+        return new DecomposedWorkerKey(host, port);
+    }
+    
+    static final class DecomposedWorkerKey {
+        private final String host;
+        private final int port;
+
+        public DecomposedWorkerKey(String host, int port) {
+            Validate.notNull(host);
+            Validate.isTrue(port >= 1 && port <= 65535);
+            this.host = host;
+            this.port = port;
+        }
+
+        public String getHost() {
+            return host;
+        }
+
+        public int getPort() {
+            return port;
+        }
+        
     }
 }
