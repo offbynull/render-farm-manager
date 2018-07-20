@@ -1,18 +1,21 @@
 package com.offbynull.rfm.host.services.h2db;
 
-import com.offbynull.rfm.host.model.specification.HostSpecification;
-import com.offbynull.rfm.host.service.Worker;
-import static com.offbynull.rfm.host.testutils.TestUtils.loadSpecResource;
+import com.offbynull.rfm.host.parser.Parser;
+import com.offbynull.rfm.host.service.Work;
 import java.io.IOException;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import java.sql.Connection;
 import java.sql.SQLException;
+import static java.util.Collections.EMPTY_LIST;
+import org.apache.commons.io.IOUtils;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 
-public final class WorkerGetterTest {
+public class WorkGetterTest {
+    
     private JdbcDataSource dataSource;
     
     private Connection conn;
@@ -28,7 +31,7 @@ public final class WorkerGetterTest {
                                                           // the duration of the test to keep the database intact. Once the test is finishes
                                                           // we close this.
 
-        WorkerPrimer.prime(dataSource);
+        WorkPrimer.prime(dataSource);
     }
     
     @After
@@ -38,25 +41,25 @@ public final class WorkerGetterTest {
     
     @Test
     public void mustGetWorker() throws SQLException, ClassNotFoundException, IOException {
-        Worker expectedWorker1 = loadWorkerIntoDatabase("worker1");
-        Worker expectedWorker2 = loadWorkerIntoDatabase("worker2");
-        Worker expectedWorker3 = loadWorkerIntoDatabase("worker3");
+        Work expectedWork1 = loadWorkIntoDatabase("work1");
+        Work expectedWork2 = loadWorkIntoDatabase("work2");
+        Work expectedWork3 = loadWorkIntoDatabase("work3");
         
-        Worker actualWorker3 = WorkerGetter.getWorker(conn, "worker3", 12345);
-        Worker actualWorker2 = WorkerGetter.getWorker(conn, "worker2", 12345);
-        Worker actualWorker1 = WorkerGetter.getWorker(conn, "worker1", 12345);
+        Work actualWork3 = WorkGetter.getWork(conn, "work3");
+        Work actualWork2 = WorkGetter.getWork(conn, "work2");
+        Work actualWork1 = WorkGetter.getWork(conn, "work1");
         
-        assertEquals(expectedWorker1, actualWorker1);
-        assertEquals(expectedWorker2, actualWorker2);
-        assertEquals(expectedWorker3, actualWorker3);
+        assertEquals(expectedWork1, actualWork1);
+        assertEquals(expectedWork2, actualWork2);
+        assertEquals(expectedWork3, actualWork3);
     }
     
-    private Worker loadWorkerIntoDatabase(String name) throws ClassNotFoundException, IOException, SQLException {
-        HostSpecification hostSpec = (HostSpecification) loadSpecResource("/com/offbynull/rfm/host/services/h2db/" + name);
-        Worker worker = new Worker(hostSpec);
+    private Work loadWorkIntoDatabase(String name) throws ClassNotFoundException, IOException, SQLException {
+        String res = IOUtils.resourceToString("/com/offbynull/rfm/host/services/h2db/" + name, UTF_8);
+        Work work = new Parser(EMPTY_LIST, EMPTY_LIST).parseScript(res);
         
-        WorkerSetter.setWorker(conn, worker);
+        WorkSetter.setWork(conn, work);
         
-        return worker;
+        return work;
     }
 }

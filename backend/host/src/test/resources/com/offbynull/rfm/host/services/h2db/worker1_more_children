@@ -1,29 +1,29 @@
 host{
-  s_host:basic1
+  s_host:worker1
   n_port:12345
   s_facility:US-EAST
   n_host_class:5
   socket{
     core{
-       cpu{
+       cpu:100000{
          n_cpu_id:0
          s_vendor:intel
          n_speed:4200
-         n_available:0
+         n_available:100000
          n_total:100000
        }
-       cpu{
+       cpu:100000{
          n_cpu_id:1
          s_vendor:intel
          n_speed:4200
-         n_available:0
+         n_available:100000
          n_total:100000
        }
-       cpu{
+       cpu:100000{
          n_cpu_id:2
          s_vendor:intel
          n_speed:4200
-         n_available:0
+         n_available:100000
          n_total:100000
        }
        n_core_id:0
@@ -31,25 +31,25 @@ host{
        n_speed:4200
     }
     core{
-      cpu{
+      cpu:100000{
         n_cpu_id:0
         s_vendor:intel
         n_speed:4200
-        n_available:0
+        n_available:100000
         n_total:100000
       }
-      cpu{
+      cpu:100000{
         n_cpu_id:1
         s_vendor:intel
         n_speed:4200
-        n_available:0
+        n_available:100000
         n_total:100000
       }
-      cpu{
+      cpu:100000{
         n_cpu_id:2
         s_vendor:intel
         n_speed:4200
-        n_available:0
+        n_available:100000
         n_total:100000
       }
       n_core_id:1
@@ -57,25 +57,25 @@ host{
       n_speed:4200
     }
     core{
-      cpu{
+      cpu:100000{
         n_cpu_id:0
         s_vendor:intel
         n_speed:4200
-        n_available:0
+        n_available:100000
         n_total:100000
       }
-      cpu{
+      cpu:100000{
         n_cpu_id:1
         s_vendor:intel
         n_speed:4200
-        n_available:0
+        n_available:100000
         n_total:100000
       }
-      cpu{
+      cpu:100000{
         n_cpu_id:2
         s_vendor:intel
         n_speed:4200
-        n_available:0
+        n_available:100000
         n_total:100000
       }
       n_core_id:2
@@ -88,21 +88,21 @@ host{
   }
   socket{
     core{
-       cpu{
+       cpu:100000{
          n_cpu_id:0
          s_vendor:intel
          n_speed:4200
          n_available:100000
          n_total:100000
        }
-       cpu{
+       cpu:100000{
          n_cpu_id:1
          s_vendor:intel
          n_speed:4200
          n_available:100000
          n_total:100000
        }
-       cpu{
+       cpu:100000{
          n_cpu_id:2
          s_vendor:intel
          n_speed:4200
@@ -114,21 +114,21 @@ host{
        n_speed:4200
     }
     core{
-      cpu{
+      cpu:100000{
         n_cpu_id:0
         s_vendor:intel
         n_speed:4200
         n_available:100000
         n_total:100000
       }
-      cpu{
+      cpu:100000{
         n_cpu_id:1
         s_vendor:intel
         n_speed:4200
         n_available:100000
         n_total:100000
       }
-      cpu{
+      cpu:100000{
         n_cpu_id:2
         s_vendor:intel
         n_speed:4200
@@ -140,108 +140,25 @@ host{
       n_speed:4200
     }
     core{
-      cpu{
-        n_cpu_id:0
-        s_vendor:intel
-        n_speed:4200
-        n_available:0
-        n_total:100000
-      }
-      cpu{
-        n_cpu_id:1
-        s_vendor:intel
-        n_speed:4200
-        n_available:0
-        n_total:100000
-      }
-      cpu{
-        n_cpu_id:2
-        s_vendor:intel
-        n_speed:4200
-        n_available:0
-        n_total:100000
-      }
-      n_core_id:2
-      s_vendor:intel
-      n_speed:4200
-    }
-    n_socket_id:2
-    s_vendor:intel
-    n_speed:4200
-  }
-  socket{
-    core{
-       cpu{
-         n_cpu_id:0
-         s_vendor:intel
-         n_speed:4200
-         n_available:100000
-         n_total:100000
-       }
-       cpu{
-         n_cpu_id:1
-         s_vendor:intel
-         n_speed:4200
-         n_available:100000
-         n_total:100000
-       }
-       cpu{
-         n_cpu_id:2
-         s_vendor:intel
-         n_speed:4200
-         n_available:100000
-         n_total:100000
-       }
-       n_core_id:0
-       s_vendor:intel
-       n_speed:4200
-    }
-    core{
-      cpu{
+      cpu:100000{
         n_cpu_id:0
         s_vendor:intel
         n_speed:4200
         n_available:100000
         n_total:100000
       }
-      cpu{
+      cpu:100000{
         n_cpu_id:1
         s_vendor:intel
         n_speed:4200
         n_available:100000
         n_total:100000
       }
-      cpu{
+      cpu:100000{
         n_cpu_id:2
         s_vendor:intel
         n_speed:4200
         n_available:100000
-        n_total:100000
-      }
-      n_core_id:1
-      s_vendor:intel
-      n_speed:4200
-    }
-    core{
-      cpu{
-        n_cpu_id:0
-        s_vendor:intel
-        n_speed:4200
-        n_available:0
-        n_total:100000
-      }
-      cpu{
-        n_cpu_id:1
-        s_vendor:intel
-        n_speed:4200
-        n_available:0
-        n_total:100000
-      }
-      cpu{
-        n_cpu_id:2
-        s_vendor:intel
-        n_speed:4200
-        n_available:0
         n_total:100000
       }
       n_core_id:2
@@ -252,45 +169,45 @@ host{
     s_vendor:intel
     n_speed:4200
   }
-  gpu{
-    s_gpu_id:pci:0000:0001
+  gpu:1{
+    s_gpu_id:pci_0000_0001
     s_vendor:nvidia
     s_model:1080
   }
-  gpu{
-    s_gpu_id:pci:0000:0002
+  gpu:1{
+    s_gpu_id:pci_0000_0002
     s_vendor:nvidia
     s_model:1080
   }
-  gpu{
-    s_gpu_id:pci:0000:0003
+  gpu:1{
+    s_gpu_id:pci_0000_0003
     s_vendor:nvidia
     s_model:1080
   }
-  mount{
+  mount:123458888{
     s_target:/mnt1
     b_rotational:false
     s_type:ext4
-    n_available:0
+    n_available:123458888
     n_total:99999999998888
   }
-  mount{
+  mount:1234512345{
     s_target:/mnt2
     b_rotational:false
     s_type:ext4
-    n_available:0
+    n_available:1234512345
     n_total:99999999992345
   }
-  mount{
+  mount:12345124727{
     s_target:/mnt3
-    b_rotational:false
+    b_rotational:true
     s_type:ext4
-    n_available:0
-    n_total:111231313131
+    n_available:12345124727
+    n_total:99999999992345
   }
-  ram{
+  ram:1111111111110{
     n_ram_id:0
-    n_available:0
+    n_available:1111111111110
     n_total:1111111111111
   }
 }

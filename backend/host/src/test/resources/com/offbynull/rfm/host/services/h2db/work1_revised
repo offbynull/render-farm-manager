@@ -1,0 +1,13 @@
+work1
+0.75
+
+1 host {
+    1 gpu with 1 capacity where gpu.s_vendor=="nvidia"
+    ? socket where socket.s_vendor=="intel" {
+        ? core {
+            [1,999999] cpu with 100000 capacity
+        }
+    }
+    1 ram with [4gb,9gb] capacity
+    1 mount with [10gb,40gb] capacity
+}

@@ -19,7 +19,6 @@ package com.offbynull.rfm.host.model.requirement;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast0;
 import com.offbynull.rfm.host.model.expression.Expression;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast1;
-import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtMost;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
 import org.apache.commons.lang3.Validate;
 
@@ -60,7 +59,6 @@ public final class MountRequirement extends Requirement implements CapacityEnabl
         isNonFractional(capacityRange.getStart());
         isNonFractional(capacityRange.getEnd());
         isAtLeast0(capacityRange.getStart());
-        isAtMost(capacityRange.getEnd(), 100000L);
         
         this.capacityRange = capacityRange;
     }

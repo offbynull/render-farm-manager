@@ -33,9 +33,9 @@ public final class WorkerScannerTest {
                                                           // we close this.
 
         WorkerPrimer.prime(dataSource);
-        loadWorkerIntoDatabase("basic1");
-        loadWorkerIntoDatabase("basic2");
-        loadWorkerIntoDatabase("basic3");
+        loadWorkerIntoDatabase("worker1");
+        loadWorkerIntoDatabase("worker2");
+        loadWorkerIntoDatabase("worker3");
     }
     
     @After
@@ -51,17 +51,17 @@ public final class WorkerScannerTest {
         workers = WorkerScanner.scanWorkers(conn, FORWARD, 1);
         assertTrue(!workers.isEmpty());
         foundKey = workers.get(0);
-        assertEquals("basic1:12345", foundKey);
+        assertEquals("worker1:12345", foundKey);
         
         workers = WorkerScanner.scanWorkers(conn, foundKey, FORWARD, 1);
         assertTrue(!workers.isEmpty());
         foundKey = workers.get(0);
-        assertEquals("basic2:12345", foundKey);
+        assertEquals("worker2:12345", foundKey);
         
         workers = WorkerScanner.scanWorkers(conn, foundKey, FORWARD, 1);
         assertTrue(!workers.isEmpty());
         foundKey = workers.get(0);
-        assertEquals("basic3:12345", foundKey);
+        assertEquals("worker3:12345", foundKey);
         
         workers = WorkerScanner.scanWorkers(conn, foundKey, FORWARD, 1);
         assertTrue(workers.isEmpty());
@@ -75,17 +75,17 @@ public final class WorkerScannerTest {
         workers = WorkerScanner.scanWorkers(conn, BACKWARD, 1);
         assertTrue(!workers.isEmpty());
         foundKey = workers.get(0);
-        assertEquals("basic3:12345", foundKey);
+        assertEquals("worker3:12345", foundKey);
         
         workers = WorkerScanner.scanWorkers(conn, foundKey, BACKWARD, 1);
         assertTrue(!workers.isEmpty());
         foundKey = workers.get(0);
-        assertEquals("basic2:12345", foundKey);
+        assertEquals("worker2:12345", foundKey);
         
         workers = WorkerScanner.scanWorkers(conn, foundKey, BACKWARD, 1);
         assertTrue(!workers.isEmpty());
         foundKey = workers.get(0);
-        assertEquals("basic1:12345", foundKey);
+        assertEquals("worker1:12345", foundKey);
         
         workers = WorkerScanner.scanWorkers(conn, foundKey, BACKWARD, 1);
         assertTrue(workers.isEmpty());
@@ -96,15 +96,15 @@ public final class WorkerScannerTest {
         List<String> workers;
         
         workers = WorkerScanner.scanWorkers(conn, FORWARD, 2);
-        assertEquals("basic1:12345", workers.get(0));
-        assertEquals("basic2:12345", workers.get(1));
+        assertEquals("worker1:12345", workers.get(0));
+        assertEquals("worker2:12345", workers.get(1));
         
-        workers = WorkerScanner.scanWorkers(conn, "basic2:12345", FORWARD, 1);
-        assertEquals("basic3:12345", workers.get(0));
+        workers = WorkerScanner.scanWorkers(conn, "worker2:12345", FORWARD, 1);
+        assertEquals("worker3:12345", workers.get(0));
         
-        workers = WorkerScanner.scanWorkers(conn, "basic1:12345", FORWARD, 100);
-        assertEquals("basic2:12345", workers.get(0));
-        assertEquals("basic3:12345", workers.get(1));
+        workers = WorkerScanner.scanWorkers(conn, "worker1:12345", FORWARD, 100);
+        assertEquals("worker2:12345", workers.get(0));
+        assertEquals("worker3:12345", workers.get(1));
     }
     
     private void loadWorkerIntoDatabase(String name) throws ClassNotFoundException, IOException, SQLException {

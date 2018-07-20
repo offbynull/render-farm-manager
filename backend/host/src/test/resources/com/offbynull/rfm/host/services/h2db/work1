@@ -1,0 +1,17 @@
+work1
+0.5
+
+b_tag_test1=true && false && false
+n_tag_test2=800
+s_gpu_vendor="nvidia"
+
+[1,20] host {
+    [1,5] gpu with 1 capacity where (gpu.s_vendor==s_gpu_vendor && gpu.n_cuda_major_version>=7) && host.n_free_mem >= gpu.n_cuda_total_mem
+    [3,40] socket where socket.s_vendor=="intel" && socket.s_family=="xeon" {
+        [1,9999] core where core.n_siblings>=2 {
+            2 cpu with 100000 capacity
+        }
+    }
+    1 ram with [4gb,9gb] capacity where ram.n_mhz>=2666 && ram.s_type=="ddr4"
+    1 mount with [10gb,40gb] capacity where !mount.b_rotational
+}

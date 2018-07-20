@@ -26,20 +26,17 @@ final class WorkPrimer {
         String table = ""
                 + "CREATE TABLE IF NOT EXISTS work(\n"
                 + "id VARCHAR(2048) NOT NULL,\n"
-                + "priority BIGDECIMAL(38,10) NOT NULL,\n"
+                + "priority NUMBER(38,10) NOT NULL,\n"
                 + "script VARCHAR(2048) NOT NULL,\n"
-                + "state VARCHAR(2048) NOT NULL CHECK(state='PAUSED' or state='WAITING' or state='RUNNING'),\n"
                 + "PRIMARY KEY(id)\n"
                 + ")";
-        String index1 = "CREATE INDEX IF NOT EXISTS work_priority_idx ON TABLE work(priority)";
-        String index2 = "CREATE INDEX IF NOT EXISTS work_id_priority_idx ON TABLE work(id, priority)";
-        String index3 = "CREATE INDEX IF NOT EXISTS work_state_idx ON TABLE work(state)";
+        String index1 = "CREATE INDEX IF NOT EXISTS work_priority_idx ON work(priority)";
+        String index2 = "CREATE INDEX IF NOT EXISTS work_id_priority_idx ON work(id, priority)";
         
         try (Statement stmt = conn.createStatement()) {
             stmt.execute(table);
             stmt.execute(index1);
             stmt.execute(index2);
-            stmt.execute(index3);
         } catch (SQLException sqle) {
             throw new IOException(sqle);
         }
@@ -56,7 +53,8 @@ final class WorkPrimer {
                 + "CONSTRAINT work_tag_valchk CHECK(\n"
                 + " (val_b != NULL AND val_n = NULL AND val_s = NULL) OR\n"
                 + " (val_b = NULL AND val_n != NULL AND val_s = NULL) OR\n"
-                + " (val_b = NULL AND val_n = NULL AND val_s != NULL),\n"
+                + " (val_b = NULL AND val_n = NULL AND val_s != NULL)\n"
+                + "),\n"
                 + "PRIMARY KEY(id, name),\n"
                 + "FOREIGN KEY(id) REFERENCES work(id) ON DELETE CASCADE ON UPDATE CASCADE\n"
                 + ")";

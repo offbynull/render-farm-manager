@@ -40,14 +40,14 @@ public final class WorkerDeleterTest {
     
     @Test
     public void mustGetWorker() throws SQLException, ClassNotFoundException, IOException {
-        loadWorkerIntoDatabase("basic1");
-        loadWorkerIntoDatabase("basic2");
-        loadWorkerIntoDatabase("basic3");
+        loadWorkerIntoDatabase("worker1");
+        loadWorkerIntoDatabase("worker2");
+        loadWorkerIntoDatabase("worker3");
 
-        WorkerDeleter.deleteWorker(conn, "basic2", 12345);
+        WorkerDeleter.deleteWorker(conn, "worker2", 12345);
         
         List<String> actualKeys = WorkerScanner.scanWorkers(conn, FORWARD, 100);
-        List<String> expectedKeys = List.of("basic1:12345", "basic3:12345");
+        List<String> expectedKeys = List.of("worker1:12345", "worker3:12345");
         
         assertEquals(expectedKeys, actualKeys);
     }

@@ -19,7 +19,6 @@ package com.offbynull.rfm.host.model.requirement;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast0;
 import com.offbynull.rfm.host.model.expression.Expression;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtMost;
-import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtMost1;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
 import org.apache.commons.lang3.Validate;
 
@@ -54,7 +53,6 @@ public final class CpuRequirement extends Requirement implements CapacityEnabled
         
         if (count != null) {
             isAtLeast0(count.getStart());
-            isAtMost1(count.getEnd());
             isNonFractional(count.getStart());
             isNonFractional(count.getEnd());
         }

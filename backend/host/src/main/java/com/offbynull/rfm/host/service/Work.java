@@ -17,7 +17,6 @@
 package com.offbynull.rfm.host.service;
 
 import static com.offbynull.rfm.host.model.common.IdCheckUtils.isCorrectId;
-import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.collections4.map.UnmodifiableMap;
 import static org.apache.commons.collections4.map.UnmodifiableMap.unmodifiableMap;
@@ -28,6 +27,8 @@ import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtMost1;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
+import static java.util.stream.Collectors.toMap;
 import org.apache.commons.collections4.set.UnmodifiableSet;
 import static org.apache.commons.collections4.set.UnmodifiableSet.unmodifiableSet;
 
@@ -53,7 +54,7 @@ public final class Work {
         Validate.isTrue(!parents.contains(id), "ID cannot be in dependencies: %s", id);
         
         this.id = id;
-        this.priority = priority;
+        this.priority = priority.stripTrailingZeros();
         this.parents = (UnmodifiableSet<String>) unmodifiableSet(new HashSet<>(parents));
         
         tags.entrySet().forEach(e -> {
@@ -65,7 +66,17 @@ public final class Work {
 
             isCorrectVarId(name, value.getClass());
         });
-        this.tags = (UnmodifiableMap<String, Object>) unmodifiableMap(new HashMap<>(tags));
+        
+        Map<String, Object> tagsWithNormalizedNumbers = tags.entrySet().stream()
+                .map(e -> {
+                    if (e.getKey().startsWith("n_")) {
+                        return Map.entry(e.getKey(), ((BigDecimal) e.getValue()).stripTrailingZeros());
+                    }
+                    return e;
+                })
+                .collect(toMap(e -> e.getKey(), e -> e.getValue()));
+        
+        this.tags = (UnmodifiableMap<String, Object>) unmodifiableMap(tagsWithNormalizedNumbers);
         this.requirementsScript = requirementsScript;
     }
 
@@ -108,4 +119,46 @@ public final class Work {
     public String getRequirementsScript() {
         return requirementsScript;
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 67 * hash + Objects.hashCode(this.id);
+        hash = 67 * hash + Objects.hashCode(this.priority);
+        hash = 67 * hash + Objects.hashCode(this.parents);
+        hash = 67 * hash + Objects.hashCode(this.tags);
+        hash = 67 * hash + Objects.hashCode(this.requirementsScript);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Work other = (Work) obj;
+        if (!Objects.equals(this.id, other.id)) {
+            return false;
+        }
+        if (!Objects.equals(this.requirementsScript, other.requirementsScript)) {
+            return false;
+        }
+        if (!Objects.equals(this.priority, other.priority)) {
+            return false;
+        }
+        if (!Objects.equals(this.parents, other.parents)) {
+            return false;
+        }
+        if (!Objects.equals(this.tags, other.tags)) {
+            return false;
+        }
+        return true;
+    }
+    
 }

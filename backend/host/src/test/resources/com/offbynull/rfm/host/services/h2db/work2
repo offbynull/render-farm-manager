@@ -1,0 +1,10 @@
+work2
+0.5
+work1
+
+[1,20] host {
+    1 gpu with 1 capacity where gpu.n_cuda_major_version==7 || gpu.n_cuda_sm_cores>=12
+    1 cpu with 100000 capacity
+    1 ram with 4gb capacity
+    1 mount with 10gb capacity
+}

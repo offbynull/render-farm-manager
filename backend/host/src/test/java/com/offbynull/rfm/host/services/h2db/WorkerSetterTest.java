@@ -37,13 +37,38 @@ public final class WorkerSetterTest {
     }
     
     @Test
-    public void mustGetWorker() throws SQLException, ClassNotFoundException, IOException {
-        HostSpecification hostSpec = (HostSpecification) loadSpecResource("/com/offbynull/rfm/host/services/h2db/basic1");
-        Worker actualWorker = new Worker(hostSpec);
-        WorkerSetter.setWorker(conn, actualWorker);
-        
-        Worker expectedWorker = WorkerGetter.getWorker(conn, "basic1", 12345);
+    public void mustSetWorker() throws SQLException, ClassNotFoundException, IOException {
+        Worker actualWorker = loadWorkerIntoDatabase("worker1");
+        Worker expectedWorker = WorkerGetter.getWorker(conn, "worker1", 12345);
         
         assertEquals(expectedWorker, actualWorker);
+    }
+    
+    @Test
+    public void mustUpdateWithLessChildren() throws SQLException, ClassNotFoundException, IOException {
+        loadWorkerIntoDatabase("worker1");
+        Worker actualWorker = loadWorkerIntoDatabase("worker1_less_children");
+        Worker expectedWorker = WorkerGetter.getWorker(conn, "worker1", 12345);
+        
+        assertEquals(expectedWorker, actualWorker);
+    }
+    
+    @Test
+    public void mustUpdateWithMoreChildren() throws SQLException, ClassNotFoundException, IOException {
+        loadWorkerIntoDatabase("worker1");
+        loadWorkerIntoDatabase("worker1_less_children");
+        Worker actualWorker = loadWorkerIntoDatabase("worker1_more_children");
+        Worker expectedWorker = WorkerGetter.getWorker(conn, "worker1", 12345);
+        
+        assertEquals(expectedWorker, actualWorker);
+    }
+    
+    private Worker loadWorkerIntoDatabase(String name) throws ClassNotFoundException, IOException, SQLException {
+        HostSpecification hostSpec = (HostSpecification) loadSpecResource("/com/offbynull/rfm/host/services/h2db/" + name);
+        Worker worker = new Worker(hostSpec);
+        
+        WorkerSetter.setWorker(conn, worker);
+        
+        return worker;
     }
 }
