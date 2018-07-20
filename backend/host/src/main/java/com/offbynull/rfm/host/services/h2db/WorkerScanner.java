@@ -3,9 +3,7 @@ package com.offbynull.rfm.host.services.h2db;
 import com.offbynull.rfm.host.service.Direction;
 import static com.offbynull.rfm.host.service.Direction.BACKWARD;
 import static com.offbynull.rfm.host.service.Direction.FORWARD;
-import com.offbynull.rfm.host.services.h2db.InternalUtils.DecomposedWorkerKey;
-import static com.offbynull.rfm.host.services.h2db.InternalUtils.fromWorkerKey;
-import static com.offbynull.rfm.host.services.h2db.InternalUtils.toWorkerKey;
+import com.offbynull.rfm.host.services.h2db.InternalUtils.DecomposedWorkerCursor;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -15,6 +13,8 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.commons.lang3.Validate;
+import static com.offbynull.rfm.host.services.h2db.InternalUtils.toWorkerCursor;
+import static com.offbynull.rfm.host.services.h2db.InternalUtils.fromWorkerCursor;
 
 final class WorkerScanner {
     
@@ -42,16 +42,16 @@ final class WorkerScanner {
         }
     }
     
-    static List<String> scanWorkers(Connection conn, String lastKey, Direction direction, int max) throws SQLException, IOException {
+    static List<String> scanWorkers(Connection conn, String cursor, Direction direction, int max) throws SQLException, IOException {
         Validate.notNull(conn);
-        Validate.notNull(lastKey);
+        Validate.notNull(cursor);
         Validate.notNull(direction);
-        Validate.notEmpty(lastKey);
+        Validate.notEmpty(cursor);
         Validate.isTrue(max >= 0);
         
-        DecomposedWorkerKey decomposedLastKey = fromWorkerKey(lastKey);
-        String lastHost = decomposedLastKey.getHost();
-        int lastPort = decomposedLastKey.getPort();
+        DecomposedWorkerCursor decomposedCursor = fromWorkerCursor(cursor);
+        String lastHost = decomposedCursor.getHost();
+        int lastPort = decomposedCursor.getPort();
         
         String selectWorkStr = "select s_host,n_port from host_spec";
         switch (direction) {
@@ -88,8 +88,8 @@ final class WorkerScanner {
                     continue;
                 }
 
-                String key = toWorkerKey(host, port);
-                ret.add(key);
+                String cursor = toWorkerCursor(host, port);
+                ret.add(cursor);
             }
             return ret;
         }

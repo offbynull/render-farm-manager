@@ -23,9 +23,7 @@ import com.offbynull.rfm.host.service.Direction;
 import com.offbynull.rfm.host.service.HostService;
 import com.offbynull.rfm.host.service.StoredWork;
 import com.offbynull.rfm.host.service.StoredWorker;
-import com.offbynull.rfm.host.services.h2db.InternalUtils.DecomposedWorkerKey;
-import static com.offbynull.rfm.host.services.h2db.InternalUtils.fromWorkerKey;
-import static com.offbynull.rfm.host.services.h2db.InternalUtils.toWorkerKey;
+import com.offbynull.rfm.host.services.h2db.InternalUtils.DecomposedWorkerCursor;
 import java.io.IOException;
 import java.sql.Connection;
 import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
@@ -35,6 +33,8 @@ import java.util.List;
 import java.util.Set;
 import javax.sql.DataSource;
 import org.apache.commons.lang3.Validate;
+import static com.offbynull.rfm.host.services.h2db.InternalUtils.toWorkerCursor;
+import static com.offbynull.rfm.host.services.h2db.InternalUtils.fromWorkerCursor;
 
 /**
  * Host service backed by H2DB.
@@ -128,7 +128,7 @@ public class H2dbHostService implements HostService {
                 return null;
             }
             
-            String key = toWorkerKey(host, port);
+            String key = toWorkerCursor(host, port);
             return new StoredWorker(key, worker);
         } catch (SQLException sqle) {
             throw new IOException(sqle);
@@ -158,7 +158,7 @@ public class H2dbHostService implements HostService {
             
             List<StoredWorker> nextStoredWorkers = new ArrayList<>(nextKeys.size());
             for (String nextKey : nextKeys) {
-                DecomposedWorkerKey decomposedLastKey = fromWorkerKey(nextKey);
+                DecomposedWorkerCursor decomposedLastKey = fromWorkerCursor(nextKey);
                 String nextHost = decomposedLastKey.getHost();
                 int nextPort = decomposedLastKey.getPort();
                 

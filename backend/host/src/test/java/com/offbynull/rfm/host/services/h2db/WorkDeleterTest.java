@@ -1,20 +1,23 @@
 package com.offbynull.rfm.host.services.h2db;
 
-import com.offbynull.rfm.host.model.specification.HostSpecification;
+import com.offbynull.rfm.host.parser.Parser;
 import static com.offbynull.rfm.host.service.Direction.FORWARD;
-import com.offbynull.rfm.host.service.Worker;
-import static com.offbynull.rfm.host.testutils.TestUtils.loadSpecResource;
+import com.offbynull.rfm.host.service.Work;
 import java.io.IOException;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import java.sql.Connection;
 import java.sql.SQLException;
+import static java.util.Collections.EMPTY_LIST;
 import java.util.List;
+import org.apache.commons.io.IOUtils;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.After;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 
-public final class WorkerDeleterTest {
+public class WorkDeleterTest {
+    
     private JdbcDataSource dataSource;
     
     private Connection conn;
@@ -30,7 +33,7 @@ public final class WorkerDeleterTest {
                                                           // the duration of the test to keep the database intact. Once the test is finishes
                                                           // we close this.
 
-        WorkerPrimer.prime(dataSource);
+        WorkPrimer.prime(dataSource);
     }
     
     @After
@@ -40,24 +43,24 @@ public final class WorkerDeleterTest {
     
     @Test
     public void mustDeleteWorker() throws SQLException, ClassNotFoundException, IOException {
-        loadWorkerIntoDatabase("worker1");
-        loadWorkerIntoDatabase("worker2");
-        loadWorkerIntoDatabase("worker3");
+        loadWorkIntoDatabase("work1");
+        loadWorkIntoDatabase("work2");
+        loadWorkIntoDatabase("work3");
 
-        WorkerDeleter.deleteWorker(conn, "worker2", 12345);
+        WorkDeleter.deleteWork(conn, "work3");
         
-        List<String> actualKeys = WorkerScanner.scanWorkers(conn, FORWARD, 100);
-        List<String> expectedKeys = List.of("worker1:12345", "worker3:12345");
+        List<String> actualKeys = WorkScanner.scanWorks(conn, FORWARD, 100);
+        List<String> expectedKeys = List.of("0.5:work2", "1:work1");
         
         assertEquals(expectedKeys, actualKeys);
     }
     
-    private Worker loadWorkerIntoDatabase(String name) throws ClassNotFoundException, IOException, SQLException {
-        HostSpecification hostSpec = (HostSpecification) loadSpecResource("/com/offbynull/rfm/host/services/h2db/" + name);
-        Worker worker = new Worker(hostSpec);
+    private Work loadWorkIntoDatabase(String name) throws ClassNotFoundException, IOException, SQLException {
+        String res = IOUtils.resourceToString("/com/offbynull/rfm/host/services/h2db/" + name, UTF_8);
+        Work work = new Parser(EMPTY_LIST, EMPTY_LIST).parseScript(res);
         
-        WorkerSetter.setWorker(conn, worker);
+        WorkSetter.setWork(conn, work);
         
-        return worker;
+        return work;
     }
 }

@@ -3,8 +3,7 @@ package com.offbynull.rfm.host.services.h2db;
 import com.offbynull.rfm.host.service.Direction;
 import static com.offbynull.rfm.host.service.Direction.BACKWARD;
 import static com.offbynull.rfm.host.service.Direction.FORWARD;
-import com.offbynull.rfm.host.services.h2db.InternalUtils.DecomposedWorkerKey;
-import static com.offbynull.rfm.host.services.h2db.InternalUtils.fromWorkerKey;
+import com.offbynull.rfm.host.services.h2db.InternalUtils.DecomposedWorkCursor;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -14,21 +13,23 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.commons.lang3.Validate;
+import static com.offbynull.rfm.host.services.h2db.InternalUtils.toWorkCursor;
+import static com.offbynull.rfm.host.services.h2db.InternalUtils.fromWorkCursor;
 
 final class WorkScanner {
     
-    static List<String> scanWorkers(Connection conn, Direction direction, int max) throws SQLException {
+    static List<String> scanWorks(Connection conn, Direction direction, int max) throws SQLException {
         Validate.notNull(conn);
         Validate.notNull(direction);
         Validate.isTrue(max >= 0);
         
-        String selectWorkStr = "select id from work";
+        String selectWorkStr = "select id,priority from work";
         switch (direction) {
             case FORWARD:
-                selectWorkStr += " order by id asc";
+                selectWorkStr += " order by priority asc,id asc";
                 break;
             case BACKWARD:
-                selectWorkStr += " order by id desc";
+                selectWorkStr += " order by priority desc,id desc";
                 break;
             default:
                 throw new IllegalStateException(); // should never happen
@@ -41,24 +42,24 @@ final class WorkScanner {
         }
     }
     
-    static List<String> scanWorkers(Connection conn, String lastKey, Direction direction, int max) throws SQLException, IOException {
+    static List<String> scanWorks(Connection conn, String cursor, Direction direction, int max) throws SQLException, IOException {
         Validate.notNull(conn);
-        Validate.notNull(lastKey);
+        Validate.notNull(cursor);
         Validate.notNull(direction);
-        Validate.notEmpty(lastKey);
+        Validate.notEmpty(cursor);
         Validate.isTrue(max >= 0);
         
-        DecomposedWorkerKey decomposedLastKey = fromWorkerKey(lastKey);
-        String lastHost = decomposedLastKey.getHost();
-        int lastPort = decomposedLastKey.getPort();
+        DecomposedWorkCursor decomposedCursor = fromWorkCursor(cursor);
+        String id = decomposedCursor.getId();
+        BigDecimal priority = decomposedCursor.getPriority();
         
-        String selectWorkStr = "select id from work";
+        String selectWorkStr = "select priority,id from work";
         switch (direction) {
             case FORWARD:
-                selectWorkStr += " where id>? order by id asc";
+                selectWorkStr += " where (priority=? and id>?) or (priority>?) order by priority asc,id asc";
                 break;
             case BACKWARD:
-                selectWorkStr += " where id<? order by id desc";
+                selectWorkStr += " where (priority=? and id<?) or (priority<?) order by priority desc,id desc";
                 break;
             default:
                 throw new IllegalStateException(); // should never happen
@@ -66,21 +67,22 @@ final class WorkScanner {
         selectWorkStr += " limit ?";
 
         try (PreparedStatement selectWorkIdPs = conn.prepareStatement(selectWorkStr)) {
-            selectWorkIdPs.setString(1, lastHost);
-            selectWorkIdPs.setBigDecimal(2, BigDecimal.valueOf(lastPort));
-            selectWorkIdPs.setString(3, lastHost);
+            selectWorkIdPs.setBigDecimal(1, priority);
+            selectWorkIdPs.setString(2, id);
+            selectWorkIdPs.setBigDecimal(3, priority);
             selectWorkIdPs.setInt(4, max);
             return executeAndRead(selectWorkIdPs);
         }
     }
 
     private static List<String> executeAndRead(PreparedStatement selectWorkIdPs) throws SQLException {
-        try (ResultSet selectWorkIdRs = selectWorkIdPs.executeQuery()) {
+        try (ResultSet selectWorkCursorRs = selectWorkIdPs.executeQuery()) {
             List<String> ret = new LinkedList<>();
-            while (selectWorkIdRs.next()) {
-                String id = selectWorkIdRs.getString("id");
-                String key = id;
-                ret.add(key);
+            while (selectWorkCursorRs.next()) {
+                BigDecimal priority = selectWorkCursorRs.getBigDecimal("priority");
+                String id = selectWorkCursorRs.getString("id");
+                String cursor = toWorkCursor(priority, id);
+                ret.add(cursor);
             }
             return ret;
         }

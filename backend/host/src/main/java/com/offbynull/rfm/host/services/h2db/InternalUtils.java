@@ -411,38 +411,38 @@ final class InternalUtils {
     
     
     
-    static String toWorkerKey(String host, int port) {
+    static String toWorkerCursor(String host, int port) {
         return host + ":" + port;
     }
     
-    static DecomposedWorkerKey fromWorkerKey(String key) throws IOException {
-        int splitIdx = key.lastIndexOf(':');
+    static DecomposedWorkerCursor fromWorkerCursor(String cursor) throws IOException {
+        int splitIdx = cursor.lastIndexOf(':');
         if (splitIdx == -1) {
-            throw new IOException("Bad key");
+            throw new IOException("Bad cursor");
         }
         
-        String host = key.substring(0, splitIdx);
+        String host = cursor.substring(0, splitIdx);
         int port;
         try {
-            port = Integer.valueOf(key.substring(splitIdx + 1));
+            port = Integer.valueOf(cursor.substring(splitIdx + 1));
         } catch (NumberFormatException nfe) {
-            throw new IOException("Bad key", nfe);
+            throw new IOException("Bad cursor", nfe);
         }
         try {
             Validate.notEmpty(host);
             Validate.isTrue(port >= 1 && port <= 65535);
         } catch (IllegalArgumentException iae) {
-            throw new IOException("Bad key", iae);
+            throw new IOException("Bad cursor", iae);
         }
         
-        return new DecomposedWorkerKey(host, port);
+        return new DecomposedWorkerCursor(host, port);
     }
     
-    static final class DecomposedWorkerKey {
+    static final class DecomposedWorkerCursor {
         private final String host;
         private final int port;
 
-        public DecomposedWorkerKey(String host, int port) {
+        private DecomposedWorkerCursor(String host, int port) {
             Validate.notNull(host);
             Validate.isTrue(port >= 1 && port <= 65535);
             this.host = host;
@@ -457,5 +457,55 @@ final class InternalUtils {
             return port;
         }
         
+    }
+    
+    
+    
+    
+    
+    static String toWorkCursor(BigDecimal priority, String id) {
+        return priority.stripTrailingZeros().toPlainString() + ":" + id;
+    }
+    
+    static DecomposedWorkCursor fromWorkCursor(String cursor) throws IOException {
+        int splitIdx = cursor.lastIndexOf(':');
+        if (splitIdx == -1) {
+            throw new IOException("Bad cursor");
+        }
+        
+        BigDecimal priority;
+        try {
+            priority = new BigDecimal(cursor.substring(0, splitIdx));
+        } catch (NumberFormatException nfe) {
+            throw new IOException("Bad cursor", nfe);
+        }
+        String id = cursor.substring(splitIdx + 1);
+        try {
+            Validate.notEmpty(id);
+        } catch (IllegalArgumentException iae) {
+            throw new IOException("Bad cursor", iae);
+        }
+        
+        return new DecomposedWorkCursor(priority, id);
+    }
+    
+    static final class DecomposedWorkCursor {
+        private final BigDecimal priority;
+        private final String id;
+
+        private DecomposedWorkCursor(BigDecimal priority, String id) {
+            Validate.notNull(priority);
+            Validate.notNull(id);
+            this.priority = priority.stripTrailingZeros();
+            this.id = id;
+        }
+
+        public BigDecimal getPriority() {
+            return priority;
+        }
+
+        public String getId() {
+            return id;
+        }
     }
 }
