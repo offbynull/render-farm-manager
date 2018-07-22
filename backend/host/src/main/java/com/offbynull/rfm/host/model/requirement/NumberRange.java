@@ -30,6 +30,11 @@ public final class NumberRange {
     private final BigDecimal start;
     private final BigDecimal end;
 
+
+    public NumberRange(long start, long end) {
+        this(BigDecimal.valueOf(start), BigDecimal.valueOf(end));
+    }
+    
     public NumberRange(BigDecimal start, BigDecimal end) {
         Validate.notNull(start);
         Validate.notNull(end);

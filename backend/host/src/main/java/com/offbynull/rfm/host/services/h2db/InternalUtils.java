@@ -198,6 +198,18 @@ final class InternalUtils {
         }
     }
     
+    static Map<String, Object> getSpecificationKeyValues(Specification specification) {
+        LinkedHashMap<String, Object> ret = new LinkedHashMap<>();
+
+        Set<String> key = getSpecificationKey(specification);
+        for (String keyItem : key) {
+            Object value = specification.getProperties().get(keyItem);
+            ret.put(keyItem, value);
+        }
+        
+        return ret;
+    }
+    
     static Map<String, Object> reduceToSpecificationKey(Class<?> specificationCls, Map<String, Object> map) {
         Set<String> key = getSpecificationKey(specificationCls);
         

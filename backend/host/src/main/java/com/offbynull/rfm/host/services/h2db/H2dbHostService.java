@@ -23,7 +23,9 @@ import com.offbynull.rfm.host.service.Direction;
 import com.offbynull.rfm.host.service.HostService;
 import com.offbynull.rfm.host.service.StoredWork;
 import com.offbynull.rfm.host.service.StoredWorker;
+import com.offbynull.rfm.host.services.h2db.InternalUtils.DecomposedWorkCursor;
 import com.offbynull.rfm.host.services.h2db.InternalUtils.DecomposedWorkerCursor;
+import static com.offbynull.rfm.host.services.h2db.InternalUtils.fromWorkCursor;
 import java.io.IOException;
 import java.sql.Connection;
 import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
@@ -35,6 +37,7 @@ import javax.sql.DataSource;
 import org.apache.commons.lang3.Validate;
 import static com.offbynull.rfm.host.services.h2db.InternalUtils.toWorkerCursor;
 import static com.offbynull.rfm.host.services.h2db.InternalUtils.fromWorkerCursor;
+import static com.offbynull.rfm.host.services.h2db.InternalUtils.toWorkCursor;
 
 /**
  * Host service backed by H2DB.
@@ -62,22 +65,95 @@ public class H2dbHostService implements HostService {
 
     @Override
     public void updateWork(Work work) throws IOException {
-        H2dbWorkDataUtils.updateWork(dataSource, work);
+        Validate.notNull(work);
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
+            
+            try (WorkLock workLock = WorkLock.lock(conn, work)) {
+                WorkSetter.setWork(conn, work);
+            }
+            
+            conn.commit();
+        } catch (SQLException sqle) {
+            throw new IOException(sqle);
+        }
     }
 
     @Override
     public void deleteWork(String id) throws IOException {
-        H2dbWorkDataUtils.deleteWork(dataSource, id);
+        Validate.notNull(id);
+        Validate.notEmpty(id);
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
+            
+            try (WorkLock workLock = WorkLock.lock(conn, id)) {
+                WorkDeleter.deleteWork(conn, id);
+            }
+            
+            conn.commit();
+        } catch (SQLException sqle) {
+            throw new IOException(sqle);
+        }
     }
 
     @Override
     public StoredWork getWork(String id) throws IOException {
-        return H2dbWorkDataUtils.getWork(dataSource, id);
+        Validate.notNull(id);
+        Validate.notEmpty(id);
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
+        
+            Work work = WorkGetter.getWork(conn, id);
+            if (work == null) {
+                return null;
+            }
+            
+            String key = toWorkCursor(work.getPriority(), id);
+            return new StoredWork(key, work);
+        } catch (SQLException sqle) {
+            throw new IOException(sqle);
+        }
     }
 
     @Override
     public List<StoredWork> getWorks(String key, Direction direction, int max) throws IOException {
-        return H2dbWorkDataUtils.getWorks(dataSource, key, direction, max);
+        // key CAN be null -- if it is null it means that you're setarting the scan (there is no previous point to continue from)
+        Validate.notNull(direction);
+        Validate.isTrue(max >= 0);
+        
+        if (max <= 2048) {
+            throw new IOException("Max too high"); // not a real restriction, but we want to avoid clobbering the db
+        }
+
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
+            
+            List<String> nextKeys;
+            if (key == null) {
+                nextKeys = WorkScanner.scanWorks(conn, direction, max);
+            } else {
+                nextKeys = WorkScanner.scanWorks(conn, key, direction, max);
+            }
+            
+            List<StoredWork> nextStoredWorks = new ArrayList<>(nextKeys.size());
+            for (String nextKey : nextKeys) {
+                DecomposedWorkCursor decomposedLastCursor = fromWorkCursor(nextKey);
+                String id = decomposedLastCursor.getId();
+                
+                Work nextWork = WorkGetter.getWork(conn, id);
+                StoredWork nextStoredWork = new StoredWork(nextKey, nextWork);
+                
+                nextStoredWorks.add(nextStoredWork);
+            }
+            
+            return nextStoredWorks;
+        } catch (SQLException sqle) {
+            throw new IOException(sqle);
+        }
     }
 
 
@@ -89,7 +165,9 @@ public class H2dbHostService implements HostService {
             conn.setAutoCommit(false);
             conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
             
-            WorkerSetter.setWorker(conn, worker);
+            try (WorkerLock workerLock = WorkerLock.lock(conn, worker)) {
+                WorkerSetter.setWorker(conn, worker);
+            }
             
             conn.commit();
         } catch (SQLException sqle) {
@@ -106,7 +184,9 @@ public class H2dbHostService implements HostService {
             conn.setAutoCommit(false);
             conn.setTransactionIsolation(TRANSACTION_READ_COMMITTED);
             
-            WorkerDeleter.deleteWorker(conn, host, port);
+            try (WorkerLock workerLock = WorkerLock.lock(conn, host, port)) {
+                WorkerDeleter.deleteWorker(conn, host, port);
+            }
             
             conn.commit();
         } catch (SQLException sqle) {
@@ -141,8 +221,8 @@ public class H2dbHostService implements HostService {
         Validate.notNull(direction);
         Validate.isTrue(max >= 0);
         
-        if (max <= 255) {
-            throw new IOException("Max too high"); // not a real restriction, but we want to avoid clobbering the db so cap at 250
+        if (max <= 2048) {
+            throw new IOException("Max too high"); // not a real restriction, but we want to avoid clobbering the db
         }
 
         try (Connection conn = dataSource.getConnection()) {
@@ -158,9 +238,9 @@ public class H2dbHostService implements HostService {
             
             List<StoredWorker> nextStoredWorkers = new ArrayList<>(nextKeys.size());
             for (String nextKey : nextKeys) {
-                DecomposedWorkerCursor decomposedLastKey = fromWorkerCursor(nextKey);
-                String nextHost = decomposedLastKey.getHost();
-                int nextPort = decomposedLastKey.getPort();
+                DecomposedWorkerCursor decomposedLastCursor = fromWorkerCursor(nextKey);
+                String nextHost = decomposedLastCursor.getHost();
+                int nextPort = decomposedLastCursor.getPort();
                 
                 Worker nextWorker = WorkerGetter.getWorker(conn, nextHost, nextPort);
                 StoredWorker nextStoredWorker = new StoredWorker(nextKey, nextWorker);

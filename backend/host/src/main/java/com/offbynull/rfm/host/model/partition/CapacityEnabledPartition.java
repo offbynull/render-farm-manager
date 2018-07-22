@@ -14,17 +14,18 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library.
  */
-package com.offbynull.rfm.host.service;
+package com.offbynull.rfm.host.model.partition;
+
+import java.math.BigDecimal;
 
 /**
- * Work state.
+ * Capacity-enabled partition.
  * @author Kasra Faghihi
  */
-public enum WorkState {
-    /** Work is paused. */
-    INACTIVE,
-    /** Work is waiting. */
-    WAITING,
-    /** Work is running. */
-    RUNNING
+public interface CapacityEnabledPartition {
+    /**
+     * Capacity to consume.
+     * @return capacity to consume
+     */
+    BigDecimal getCapacity();
 }

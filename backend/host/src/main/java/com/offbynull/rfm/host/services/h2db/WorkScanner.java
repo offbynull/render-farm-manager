@@ -18,6 +18,10 @@ import static com.offbynull.rfm.host.services.h2db.InternalUtils.fromWorkCursor;
 
 final class WorkScanner {
     
+    private WorkScanner() {
+        // do nothing
+    }
+    
     static List<String> scanWorks(Connection conn, Direction direction, int max) throws SQLException {
         Validate.notNull(conn);
         Validate.notNull(direction);

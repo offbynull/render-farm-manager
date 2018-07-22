@@ -25,15 +25,12 @@ import org.apache.commons.lang3.Validate;
 public class StoredWork {
     private final String key;
     private final Work work;
-    private final WorkState state;
 
-    public StoredWork(String key, Work work, WorkState state) {
+    public StoredWork(String key, Work work) {
         Validate.notNull(key);
         Validate.notNull(work);
-        Validate.notNull(state);
         this.key = key;
         this.work = work;
-        this.state = state;
     }
 
     public String getKey() {
@@ -43,9 +40,4 @@ public class StoredWork {
     public Work getWork() {
         return work;
     }
-
-    public WorkState getState() {
-        return state;
-    }
-    
 }
