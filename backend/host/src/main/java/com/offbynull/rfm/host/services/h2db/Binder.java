@@ -3,11 +3,9 @@ package com.offbynull.rfm.host.services.h2db;
 import com.offbynull.rfm.host.model.partition.CorePartition;
 import com.offbynull.rfm.host.model.partition.CpuPartition;
 import com.offbynull.rfm.host.model.partition.GpuPartition;
-import com.offbynull.rfm.host.model.partition.HostPartition;
 import com.offbynull.rfm.host.model.partition.MountPartition;
 import com.offbynull.rfm.host.model.partition.Partition;
 import com.offbynull.rfm.host.model.partition.RamPartition;
-import com.offbynull.rfm.host.model.partition.SocketPartition;
 import com.offbynull.rfm.host.model.requirement.CapacityEnabledRequirement;
 import com.offbynull.rfm.host.model.requirement.CoreRequirement;
 import com.offbynull.rfm.host.model.requirement.CpuRequirement;
@@ -16,15 +14,13 @@ import com.offbynull.rfm.host.model.requirement.HostRequirement;
 import com.offbynull.rfm.host.model.requirement.MountRequirement;
 import com.offbynull.rfm.host.model.requirement.NumberRange;
 import com.offbynull.rfm.host.model.requirement.RamRequirement;
-import com.offbynull.rfm.host.model.requirement.SocketRequirement;
+import com.offbynull.rfm.host.model.requirement.Requirement;
 import com.offbynull.rfm.host.model.specification.CapacityEnabledSpecification;
 import com.offbynull.rfm.host.model.specification.CoreSpecification;
 import com.offbynull.rfm.host.model.specification.CpuSpecification;
 import com.offbynull.rfm.host.model.specification.GpuSpecification;
-import com.offbynull.rfm.host.model.specification.HostSpecification;
 import com.offbynull.rfm.host.model.specification.MountSpecification;
 import com.offbynull.rfm.host.model.specification.RamSpecification;
-import com.offbynull.rfm.host.model.specification.SocketSpecification;
 import com.offbynull.rfm.host.model.specification.Specification;
 import com.offbynull.rfm.host.parser.Parser;
 import com.offbynull.rfm.host.service.Work;
@@ -36,10 +32,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.Validate;
 
 final class Binder {
@@ -102,241 +101,251 @@ final class Binder {
     }
     
 
-    private static HostPartition partitionHost(
-            Map<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
-            HostRequirement hostReq,
-            HostSpecification hostSpec) {
-        // we need to copy updatableCapacities becuase it may get modified even if a match isn't found... if a match is found the copy will
-        // get put back into the original
-        Map<CapacityEnabledSpecification, BigDecimal> updatableCapacitiesCopy;        
-
-        // for each socket requirement
-        List<SocketPartition> socketPartitions = new LinkedList<>();
-        for (SocketRequirement socketReq : hostReq.getSocketRequirements()) {
-            for (SocketSpecification socketSpec : hostSpec.getSocketSpecifications()) {
-                updatableCapacitiesCopy = new LinkedHashMap<>(updatableCapacities);
-                List<SocketPartition> _socketPartitions = partitionAcrossSockets(updatableCapacitiesCopy, socketReq, List.of(socketSpec));
-                socketPartitions.addAll(_socketPartitions);
-                updatableCapacities.putAll(updatableCapacitiesCopy);
-            }
-        }
-
-        // for each gpu requirement
-        List<GpuPartition> gpuPartitions = new LinkedList<>();
-        for (GpuRequirement gpuReq : hostReq.getGpuRequirements()) {
-            for (GpuSpecification gpuSpec : hostSpec.getGpuSpecifications()) {
-                updatableCapacitiesCopy = new LinkedHashMap<>(updatableCapacities);
-                List<GpuPartition> _gpuPartitions = partitionGpu(updatableCapacitiesCopy, gpuReq, List.of(gpuSpec));
-                gpuPartitions.addAll(_gpuPartitions);
-                updatableCapacities.putAll(updatableCapacitiesCopy);
-            }
-        }
-
-        // for each mount requirement
-        List<MountPartition> mountPartitions = new LinkedList<>();
-        for (MountRequirement mountReq : hostReq.getMountRequirements()) {
-            for (MountSpecification mountSpec : hostSpec.getMountSpecifications()) {
-                updatableCapacitiesCopy = new LinkedHashMap<>(updatableCapacities);
-                List<MountPartition> _mountPartitions = partitionMount(updatableCapacitiesCopy, mountReq, List.of(mountSpec));
-                mountPartitions.addAll(_mountPartitions);
-                updatableCapacities.putAll(updatableCapacitiesCopy);
-            }
-        }
-
-        // for each ram requirement
-        List<RamPartition> ramPartitions = new LinkedList<>();
-        for (RamRequirement ramReq : hostReq.getRamRequirements()) {
-            for (RamSpecification ramSpec : hostSpec.getRamSpecifications()) {
-                updatableCapacitiesCopy = new LinkedHashMap<>(updatableCapacities);
-                List<RamPartition> _ramPartitions = partitionRam(updatableCapacitiesCopy, ramReq, List.of(ramSpec));
-                ramPartitions.addAll(_ramPartitions);
-                updatableCapacities.putAll(updatableCapacitiesCopy);
-            }
-        }
-        
-        Map<String, Object> specificationId = getSpecificationKeyValues(hostSpec);
-        return new HostPartition(specificationId,
-                socketPartitions.stream().toArray(i -> new SocketPartition[i]),
-                gpuPartitions.stream().toArray(i -> new GpuPartition[i]),
-                ramPartitions.stream().toArray(i -> new RamPartition[i]),
-                mountPartitions.stream().toArray(i -> new MountPartition[i]));
-    }
+//    private static HostPartition partitionHost(
+//            Map<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
+//            HostRequirement hostReq,
+//            HostSpecification hostSpec) {
+//        // we need to copy updatableCapacities becuase it may get modified even if a match isn't found... if a match is found the copy will
+//        // get put back into the original
+//        Map<CapacityEnabledSpecification, BigDecimal> updatableCapacitiesCopy;        
+//
+//        // for each socket requirement
+//        List<SocketPartition> socketPartitions = new LinkedList<>();
+//        for (SocketRequirement socketReq : hostReq.getSocketRequirements()) {
+//            for (SocketSpecification socketSpec : hostSpec.getSocketSpecifications()) {
+//                updatableCapacitiesCopy = new LinkedHashMap<>(updatableCapacities);
+//                List<SocketPartition> _socketPartitions = partitionAcrossSockets(updatableCapacitiesCopy, socketReq, List.of(socketSpec));
+//                socketPartitions.addAll(_socketPartitions);
+//                updatableCapacities.putAll(updatableCapacitiesCopy);
+//            }
+//        }
+//
+//        // for each gpu requirement
+//        List<GpuPartition> gpuPartitions = new LinkedList<>();
+//        for (GpuRequirement gpuReq : hostReq.getGpuRequirements()) {
+//            for (GpuSpecification gpuSpec : hostSpec.getGpuSpecifications()) {
+//                updatableCapacitiesCopy = new LinkedHashMap<>(updatableCapacities);
+//                GpuPartition _gpuPartition = partitionGpu(updatableCapacitiesCopy, gpuReq, gpuSpec);
+//                gpuPartitions.add(_gpuPartition);
+//                updatableCapacities.putAll(updatableCapacitiesCopy);
+//            }
+//        }
+//
+//        // for each mount requirement
+//        List<MountPartition> mountPartitions = new LinkedList<>();
+//        for (MountRequirement mountReq : hostReq.getMountRequirements()) {
+//            for (MountSpecification mountSpec : hostSpec.getMountSpecifications()) {
+//                updatableCapacitiesCopy = new LinkedHashMap<>(updatableCapacities);
+//                MountPartition _mountPartition = partitionMount(updatableCapacitiesCopy, mountReq, mountSpec);
+//                mountPartitions.add(_mountPartition);
+//                updatableCapacities.putAll(updatableCapacitiesCopy);
+//            }
+//        }
+//
+//        // for each ram requirement
+//        List<RamPartition> ramPartitions = new LinkedList<>();
+//        for (RamRequirement ramReq : hostReq.getRamRequirements()) {
+//            for (RamSpecification ramSpec : hostSpec.getRamSpecifications()) {
+//                updatableCapacitiesCopy = new LinkedHashMap<>(updatableCapacities);
+//                RamPartition _ramPartition = partitionRam(updatableCapacitiesCopy, ramReq, ramSpec);
+//                ramPartitions.add(_ramPartition);
+//                updatableCapacities.putAll(updatableCapacitiesCopy);
+//            }
+//        }
+//        
+//        Map<String, Object> specificationId = getSpecificationKeyValues(hostSpec);
+//        return new HostPartition(specificationId,
+//                socketPartitions.stream().toArray(i -> new SocketPartition[i]),
+//                gpuPartitions.stream().toArray(i -> new GpuPartition[i]),
+//                ramPartitions.stream().toArray(i -> new RamPartition[i]),
+//                mountPartitions.stream().toArray(i -> new MountPartition[i]));
+//    }
     
-    
-    
-    private static List<SocketPartition> partitionAcrossSockets(
-            Map<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
-            SocketRequirement socketReq,
-            List<SocketSpecification> socketSpecs) {
-        // we need to copy updatableCapacities becuase it may get modified even if a match isn't found... if a match is found the copy will
-        // get put back into the original
-        Map<CapacityEnabledSpecification, BigDecimal> updatableCapacitiesCopy = new LinkedHashMap<>(updatableCapacities);
-        List<SocketPartition> socketPartitions = new LinkedList<>();        
-
-        // for each socket requirement
-        for (CoreRequirement coreReq : socketReq.getCoreRequirements()) {
-            List<SocketPartition> socketPartitionsForReq = new LinkedList<>();
-            List<CorePartition> corePartitionsForReq = new LinkedList<>();
-            NumberRange coreCountRangeForReq = coreReq.getCount();
-            // for each socket
-            for (SocketSpecification socketSpec : socketSpecs) {
-                Map<String, Object> specificationId = getSpecificationKeyValues(socketSpec);
-                // for each core in the socket
-                for (CoreSpecification coreSpec : socketSpec.getCoreSpecifications()) {
-                    // have we found the max core for the req? if so break
-                    int foundCount = corePartitionsForReq.size();
-                    if (coreCountRangeForReq.compareEnd(foundCount) >= 0) {
-                        break;
-                    }
-                    // partition this core and add that partition to the found list
-                    List<CorePartition> corePartitions = partitionAcrossCores(updatableCapacitiesCopy, coreReq, List.of(coreSpec));
-                    corePartitionsForReq.addAll(corePartitions);
-                }
-                // add core
-                SocketPartition socketPartition = new SocketPartition(specificationId,
-                        corePartitionsForReq.stream().toArray(i -> new CorePartition[i]));
-                socketPartitionsForReq.add(socketPartition);
-            }
-            // if the number of found cpus is within the req bounds, add the cores they were found in it to the return list
-            long coreCount = socketPartitions.stream().flatMap(x -> x.getCorePartitions().stream()).count();
-            if (coreCountRangeForReq.isInRange(coreCount)) {
-                socketPartitions.addAll(socketPartitionsForReq);
-            }
-        }
-        
-        if (!socketPartitions.isEmpty()) {
-            updatableCapacities.putAll(updatableCapacitiesCopy);
-        }
-        
-        return socketPartitions;
-    }
-    
-    static List<CorePartition> partitionAcrossCores(
+    static CorePartition partitionIndividualCore(
             Map<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
             CoreRequirement coreReq,
-            List<CoreSpecification> coreSpecs) {
-        // we need to copy updatableCapacities becuase it may get modified even if a match isn't found... if a match is found the copy will
-        // get put back into the original
-        Map<CapacityEnabledSpecification, BigDecimal> updatableCapacitiesCopy = new LinkedHashMap<>(updatableCapacities);
-        List<CorePartition> corePartitions = new LinkedList<>();        
-
-        // for each cpu requirement
+            CoreSpecification coreSpec) {
+        Validate.validState(coreReq.getCount() != null);
+        
+        List<CpuPartition> corePartitions = new ArrayList<>();
+        
         for (CpuRequirement cpuReq : coreReq.getCpuRequirements()) {
-            List<CorePartition> corePartitionsForReq = new LinkedList<>();
-            List<CpuPartition> cpuPartitionsForReq = new LinkedList<>();
-            NumberRange cpuCountRangeForReq = cpuReq.getCount();
-            // for each core
-            for (CoreSpecification coreSpec : coreSpecs) {
-                Map<String, Object> specificationId = getSpecificationKeyValues(coreSpec);
-                // for each cpu in the core
+            // we need operate on a copy of updatableCapacities because we may end up discarding the partitions we acquire
+            Map<CapacityEnabledSpecification, BigDecimal> updatableCapacitiesCopy = new LinkedHashMap<>(updatableCapacities);
+        
+            NumberRange cpuReqCount = cpuReq.getCount();
+            List<CpuPartition> coreCpuPartitions = new LinkedList<>();
+            while (true) {
+                int oldSize = coreCpuPartitions.size();
+
                 for (CpuSpecification cpuSpec : coreSpec.getCpuSpecifications()) {
                     // have we found the max cpus for the req? if so break
-                    int foundCount = cpuPartitionsForReq.size();
-                    if (cpuCountRangeForReq.compareEnd(foundCount) <= 0) {
+                    int foundCount = coreCpuPartitions.size();
+                    if (!cpuReqCount.isBeforeEnd(foundCount)) {
                         break;
                     }
                     // partition this cpu and add that partition to the found list
-                    List<CpuPartition> cpuPartitions = partitionCpu(updatableCapacitiesCopy, cpuReq, List.of(cpuSpec));
-                    cpuPartitionsForReq.addAll(cpuPartitions);
+                    CpuPartition foundCpuPartition = partitionCpu(updatableCapacitiesCopy, cpuReq, cpuSpec);
+                    if (foundCpuPartition != null) {
+                        coreCpuPartitions.add(foundCpuPartition);
+                    }
                 }
-                // add core
-                CorePartition corePartition = new CorePartition(specificationId,
-                        cpuPartitionsForReq.stream().toArray(i -> new CpuPartition[i]));
-                corePartitionsForReq.add(corePartition);
+                
+                // if nothing was added in this pass, break out of loop
+                int newSize = coreCpuPartitions.size();
+                if (oldSize == newSize) {
+                    break;
+                }
             }
-            // if the number of found cpus is within the req bounds, add the cores they were found in it to the return list
-            long foundCount = cpuPartitionsForReq.size();
-            if (cpuCountRangeForReq.compareStart(foundCount) <= 0) {
-                corePartitions.addAll(corePartitionsForReq);
+            
+            // if we don't have atleast the min cpus for the req, skip
+            int foundCount = coreCpuPartitions.size();
+            if (cpuReqCount.isBeforeStart(foundCount)) {
+                continue;
             }
-        }
-        
-        int coreCount = corePartitions.size();
-        if (coreReq.getCount().isInRange(coreCount)) {
+            
+            // otherwise, apply
             updatableCapacities.putAll(updatableCapacitiesCopy);
-            return corePartitions;
-        } else {
-            return null;
+            corePartitions.addAll(coreCpuPartitions);
         }
+
+
+        Map<String, Object> specificationId = getSpecificationKeyValues(coreSpec);
+        CpuPartition[] cpuPartitions = corePartitions.stream().toArray(i -> new CpuPartition[i]);
+        return new CorePartition(specificationId, cpuPartitions);
     }
     
-    static List<CpuPartition> partitionCpu(
+    static List<CorePartition> partitionAcrossAllCores(
+            Map<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
+            CoreRequirement coreReq,
+            List<CoreSpecification> coreSpecs) {
+        Validate.validState(coreReq.getCount() == null);
+        
+        // we need to copy updatableCapacities becuase it may get modified even if a match isn't found... if a match is found the copy will
+        // get put back into the original
+        Map<CapacityEnabledSpecification, BigDecimal> updatableCapacitiesCopy = new LinkedHashMap<>(updatableCapacities);
+        MultiValuedMap<CoreSpecification, CpuPartition> corePartitions = new ArrayListValuedHashMap<>();
+        
+        for (CpuRequirement cpuReq : coreReq.getCpuRequirements()) {
+            NumberRange cpuReqCount = cpuReq.getCount();
+            while (true) {
+                int oldSize = corePartitions.size();
+                
+                for (CoreSpecification coreSpec : coreSpecs) {
+                    List<CpuPartition> coreCpuPartitions = new LinkedList<>();
+                    for (CpuSpecification cpuSpec : coreSpec.getCpuSpecifications()) {
+                        // have we found the max cpus for the req? if so break
+                        int foundCount = coreCpuPartitions.size();
+                        if (!cpuReqCount.isBeforeEnd(foundCount)) {
+                            break;
+                        }
+                        // partition this cpu and add that partition to the found list
+                        CpuPartition foundCpuPartition = partitionCpu(updatableCapacitiesCopy, cpuReq, cpuSpec);
+                        if (foundCpuPartition != null) {
+                            coreCpuPartitions.add(foundCpuPartition);
+                        }
+                    }
+                    
+                    // if we don't have atleast the min cpus for the req, skip
+                    int foundCount = coreCpuPartitions.size();
+                    if (cpuReqCount.isBeforeStart(foundCount)) {
+                        continue;
+                    }
+                    corePartitions.putAll(coreSpec, coreCpuPartitions);
+                }
+                
+                // if nothing was added in this pass, break out of loop
+                int newSize = corePartitions.size();
+                if (oldSize == newSize) {
+                    break;
+                }
+            }
+        }
+
+        updatableCapacities.putAll(updatableCapacitiesCopy);
+        List<CorePartition> ret = new LinkedList<>();
+        for (CoreSpecification key : corePartitions.keySet()) {
+            CpuPartition[] cpuPartitions = corePartitions.get(key).stream().toArray(i -> new CpuPartition[i]);
+            Map<String, Object> specificationId = getSpecificationKeyValues(key);
+            
+            CorePartition corePartition = new CorePartition(specificationId, cpuPartitions);
+            ret.add(corePartition);
+        }
+        return ret;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    //
+    // All of the following requirements are terminal nodes -- they cannot have a count range of null.
+    //
+    
+    static CpuPartition partitionCpu(
             Map<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
             CpuRequirement cpuReq,
-            List<CpuSpecification> cpuSpecs) {
+            CpuSpecification cpuSpec) {
         return partitionLeafNode(updatableCapacities,
                 cpuReq,
-                cpuSpecs,
+                cpuSpec,
                 (id, cap) -> new CpuPartition(id, cap));
     }
     
-    private static List<GpuPartition> partitionGpu(
+    private static GpuPartition partitionGpu(
             Map<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
             GpuRequirement gpuReq,
-            List<GpuSpecification> gpuSpecs) {
+            GpuSpecification gpuSpec) {
         return partitionLeafNode(
                 updatableCapacities,
                 gpuReq,
-                gpuSpecs,
+                gpuSpec,
                 (id, cap) -> new GpuPartition(id, cap));
     }
     
-    private static List<MountPartition> partitionMount(
+    private static MountPartition partitionMount(
             Map<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
             MountRequirement mountReq,
-            List<MountSpecification> mountSpecs) {
+            MountSpecification mountSpec) {
         return partitionLeafNode(
                 updatableCapacities,
                 mountReq,
-                mountSpecs,
+                mountSpec,
                 (id, cap) -> new MountPartition(id, cap));
     }
     
-    private static List<RamPartition> partitionRam(
+    private static RamPartition partitionRam(
             Map<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
             RamRequirement ramReq,
-            List<RamSpecification> ramSpecs) {
+            RamSpecification ramSpec) {
         return partitionLeafNode(
                 updatableCapacities,
                 ramReq,
-                ramSpecs,
+                ramSpec,
                 (id, cap) -> new RamPartition(id, cap));
     }
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    private static <P extends Partition, S extends CapacityEnabledSpecification, R extends CapacityEnabledRequirement> List<P>
-            partitionLeafNode(
+    private static <P extends Partition, S extends CapacityEnabledSpecification, R extends CapacityEnabledRequirement> P partitionLeafNode(
             Map<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
             R req,
-            List<S> specs,
+            S spec,
             LeafConstructor<P> constructor) {
-        List<P> partitions = new LinkedList<>();
-        for (S spec : specs) {
-            while (true) {
-                Map<String, Object> specificationId = getSpecificationKeyValues((Specification) spec);
-                BigDecimal consumeCapacity = consumeCapacity(updatableCapacities, spec, req);
-                if (consumeCapacity == null) {
-                    break;
-                }
-                P partition = constructor.construct(specificationId, consumeCapacity);
-                partitions.add(partition);
-            }
+        Validate.validState(((Requirement) req).getCount() != null);
+        
+        Map<String, Object> specificationId = getSpecificationKeyValues((Specification) spec);
+        BigDecimal consumeCapacity = consumeCapacity(updatableCapacities, spec, req);
+        if (consumeCapacity == null) {
+            return null;
         }
-        return partitions;
+        P partition = constructor.construct(specificationId, consumeCapacity);
+        return partition;
     }
     
     private interface LeafConstructor<T extends Partition> {

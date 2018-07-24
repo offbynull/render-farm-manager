@@ -52,14 +52,6 @@ public final class NumberRange {
         return end;
     }
 
-    public int compareStart(long i) {
-        return start.compareTo(BigDecimal.valueOf(i));
-    }
-
-    public int compareEnd(long i) {
-        return end.compareTo(BigDecimal.valueOf(i));
-    }
-
     public boolean isInRange(long i) {
         return isInRange(BigDecimal.valueOf(i));
     }
@@ -67,6 +59,22 @@ public final class NumberRange {
     public boolean isInRange(BigDecimal bd) {
         Validate.notNull(bd);
         return bd.compareTo(start) >= 0 && bd.compareTo(end) <= 0;
+    }
+    
+    public boolean isBeforeStart(long i) {
+        return BigDecimal.valueOf(i).compareTo(start) < 0;
+    }
+    
+    public boolean isBeforeEnd(long i) {
+        return BigDecimal.valueOf(i).compareTo(end) < 0;
+    }
+    
+    public boolean isAfterStart(long i) {
+        return BigDecimal.valueOf(i).compareTo(start) > 0;
+    }
+    
+    public boolean isAfterEnd(long i) {
+        return BigDecimal.valueOf(i).compareTo(end) > 0;
     }
     
     public static NumberRange of(long value) {
