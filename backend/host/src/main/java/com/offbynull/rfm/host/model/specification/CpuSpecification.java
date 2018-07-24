@@ -17,6 +17,7 @@
 package com.offbynull.rfm.host.model.specification;
 
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast0;
+import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtMost;
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isNonFractional;
 import java.math.BigDecimal;
 import java.util.LinkedHashSet;
@@ -58,7 +59,8 @@ public final class CpuSpecification extends Specification implements CapacityEna
      * {@code properties.entrySet().forEach(e -> IdCheckUtils.isCorrectVarId(k, v.getClass()))},
      * {@code NumberCheckUtils.isNonFractional(properties.get("n_cpu_id"))},
      * {@code NumberCheckUtils.isAtLeast0(properties.get("n_cpu_id"))},
-     * {@code NumberCheckUtils.isAtLeast0(capacity)}
+     * {@code NumberCheckUtils.isAtLeast0(capacity)},
+     * {@code NumberCheckUtils.isAtMost(capacity, 100000L)}
      */
     public CpuSpecification(BigDecimal capacity, Map<String, Object> properties) {
         super(properties, KEY_NAMES);
@@ -69,6 +71,7 @@ public final class CpuSpecification extends Specification implements CapacityEna
         isNonFractional(cpuId);
         isAtLeast0(cpuId);
         isAtLeast0(capacity);
+        isAtMost(capacity, 100000L);
         this.capacity = capacity.stripTrailingZeros();
     }
 

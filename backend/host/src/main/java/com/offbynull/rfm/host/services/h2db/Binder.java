@@ -299,7 +299,7 @@ final class Binder {
                 (id, cap) -> new CpuPartition(id, cap));
     }
     
-    private static GpuPartition partitionGpu(
+    static GpuPartition partitionGpu(
             Map<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
             GpuRequirement gpuReq,
             GpuSpecification gpuSpec) {
@@ -310,7 +310,7 @@ final class Binder {
                 (id, cap) -> new GpuPartition(id, cap));
     }
     
-    private static MountPartition partitionMount(
+    static MountPartition partitionMount(
             Map<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
             MountRequirement mountReq,
             MountSpecification mountSpec) {
@@ -321,7 +321,7 @@ final class Binder {
                 (id, cap) -> new MountPartition(id, cap));
     }
     
-    private static RamPartition partitionRam(
+    static RamPartition partitionRam(
             Map<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
             RamRequirement ramReq,
             RamSpecification ramSpec) {

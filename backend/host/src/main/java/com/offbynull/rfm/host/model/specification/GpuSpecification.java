@@ -17,6 +17,7 @@
 package com.offbynull.rfm.host.model.specification;
 
 import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtLeast0;
+import static com.offbynull.rfm.host.model.common.NumberCheckUtils.isAtMost1;
 import java.math.BigDecimal;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -57,6 +58,7 @@ public final class GpuSpecification extends Specification implements CapacityEna
      * {@code properties.entrySet().forEach(e -> IdCheckUtils.isCorrectVarId(k, v.getClass()))},
      * {@code !properties.get("s_gpu_id").isEmpty()},
      * {@code NumberCheckUtils.isAtLeast0(capacity)}
+     * {@code NumberCheckUtils.isAtMost1(capacity)}
      */
     public GpuSpecification(BigDecimal capacity, Map<String, Object> properties) {
         super(properties, KEY_NAMES);
@@ -66,6 +68,7 @@ public final class GpuSpecification extends Specification implements CapacityEna
         
         Validate.notEmpty(gpuId);
         isAtLeast0(capacity);
+        isAtMost1(capacity);
         this.capacity = capacity.stripTrailingZeros();
     }
     
