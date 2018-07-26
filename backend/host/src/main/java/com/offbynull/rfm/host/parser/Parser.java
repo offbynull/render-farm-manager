@@ -23,6 +23,7 @@ import com.offbynull.rfm.host.parser.antlr.EvalLexer;
 import com.offbynull.rfm.host.parser.antlr.EvalParser;
 import static com.offbynull.rfm.host.parser.antlr.EvalParser.VOCABULARY;
 import com.offbynull.rfm.host.model.requirement.HostRequirement;
+import com.offbynull.rfm.host.model.requirement.Requirement;
 import static java.lang.String.format;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -127,6 +128,14 @@ public final class Parser {
     }
 
     public HostRequirement parseScriptReqs(Map<String, Object> tags, String input) {
+        try {
+            return (HostRequirement) parseReq(tags, input);
+        } catch (ClassCastException cce) {
+            throw new IllegalArgumentException("Root node did not evaluate to " + HostRequirement.class.getSimpleName());
+        }
+    }
+
+    public Requirement parseReq(Map<String, Object> tags, String input) {
         Validate.notNull(tags); // contents of tags are verified in visitor.populateTagCache(), so don't worry about it here
         Validate.notNull(input);
 
@@ -136,7 +145,7 @@ public final class Parser {
         visitor.populateTagCache(tags);
         
         try {
-            return (HostRequirement) visitor.visit(parser.reqEntry());
+            return (Requirement) visitor.visit(parser.reqEntry());
         } catch (ParseCancellationException pce) { // throws by BailErrorStrategy
             RecognitionException re = (RecognitionException) pce.getCause();
             throw new IllegalArgumentException(

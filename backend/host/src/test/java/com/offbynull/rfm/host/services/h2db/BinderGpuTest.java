@@ -1,57 +1,46 @@
 package com.offbynull.rfm.host.services.h2db;
 
-import com.offbynull.rfm.host.model.expression.BooleanLiteralExpression;
 import com.offbynull.rfm.host.model.partition.GpuPartition;
 import com.offbynull.rfm.host.model.requirement.GpuRequirement;
-import com.offbynull.rfm.host.model.requirement.NumberRange;
 import com.offbynull.rfm.host.model.specification.CapacityEnabledSpecification;
 import com.offbynull.rfm.host.model.specification.GpuSpecification;
+import com.offbynull.rfm.host.parser.Parser;
+import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.assertGpuPartition;
+import static com.offbynull.rfm.host.testutils.TestUtils.loadSpec;
+import static com.offbynull.rfm.host.testutils.TestUtils.pullCapacities;
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.Map;
-import static org.junit.Assert.assertEquals;
+import static java.math.BigDecimal.ZERO;
+import static java.util.Collections.EMPTY_LIST;
+import static java.util.Collections.EMPTY_MAP;
+import java.util.IdentityHashMap;
 import static org.junit.Assert.assertNull;
 import org.junit.Test;
 
 public class BinderGpuTest {
     
+    private final Parser parser = new Parser(EMPTY_LIST, EMPTY_LIST);
+    
     @Test
-    public void mustBindToGpu() {
-        GpuRequirement gpuReq = new GpuRequirement(
-                new NumberRange(1, 1),
-                new BooleanLiteralExpression(true),
-                new NumberRange(1, 1)
-        );
-        GpuSpecification gpuSpec = new GpuSpecification(
-                BigDecimal.valueOf(1),
-                Map.of("s_gpu_id", "pci_0000")
-        );
-        Map<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new HashMap<>();
-        updatableCapacities.put(gpuSpec, BigDecimal.valueOf(1));
+    public void mustBindToGpu() throws Exception {
+        GpuRequirement gpuReq = (GpuRequirement) parser.parseReq(EMPTY_MAP, "1 gpu with 1 capacity");
+        GpuSpecification gpuSpec = (GpuSpecification) loadSpec("gpu:1{ s_gpu_id:pci_0000 }");
+        
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
+        pullCapacities(gpuSpec, updatableCapacities);
         
         GpuPartition gpuPartition = Binder.partitionGpu(updatableCapacities, gpuReq, gpuSpec);
         
-        assertEquals(
-                1,
-                gpuPartition.getCapacity().intValueExact());
-        assertEquals(
-                Map.of("s_gpu_id", "pci_0000"),
-                gpuPartition.getSpecificationId());
+        assertGpuPartition(gpuPartition, "pci_0000", 1);
     }
     
     @Test
-    public void mustNotBindToBecauseGpuIsBeingUsed() {
-        GpuRequirement gpuReq = new GpuRequirement(
-                new NumberRange(1, 1),
-                new BooleanLiteralExpression(true),
-                new NumberRange(1, 1)
-        );
-        GpuSpecification gpuSpec = new GpuSpecification(
-                BigDecimal.valueOf(1),
-                Map.of("s_gpu_id", "pci_0000")
-        );
-        Map<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new HashMap<>();
-        updatableCapacities.put(gpuSpec, BigDecimal.valueOf(0));
+    public void mustNotBindToBecauseGpuIsBeingUsed() throws Exception {
+        GpuRequirement gpuReq = (GpuRequirement) parser.parseReq(EMPTY_MAP, "1 gpu with 1 capacity");
+        GpuSpecification gpuSpec = (GpuSpecification) loadSpec("gpu:1{ s_gpu_id:pci_0000 }");
+        
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
+        pullCapacities(gpuSpec, updatableCapacities);
+        updatableCapacities.put(gpuSpec, ZERO);
         
         GpuPartition gpuPartition = Binder.partitionGpu(updatableCapacities, gpuReq, gpuSpec);
         
