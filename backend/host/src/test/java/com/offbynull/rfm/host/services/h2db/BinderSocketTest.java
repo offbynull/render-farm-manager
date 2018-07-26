@@ -8,6 +8,7 @@ import com.offbynull.rfm.host.parser.Parser;
 import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.assertSocketPartition;
 import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.assertCorePartition;
 import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.assertCpuPartition;
+import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.createCapacityMap;
 import com.offbynull.rfm.host.testutils.TestUtils;
 import java.math.BigDecimal;
 import static java.util.Collections.EMPTY_LIST;
@@ -52,8 +53,7 @@ public class BinderSocketTest {
                 + "}"
         );
 
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        TestUtils.pullCapacities(socketSpec, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(socketSpec);
         
         SocketPartition socketPartition_0 = Binder.partitionIndividualSocket(updatableCapacities, socketReq, socketSpec);
         assertSocketPartition(socketPartition_0, 0,
@@ -99,8 +99,7 @@ public class BinderSocketTest {
                 + "}"
         );
 
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        TestUtils.pullCapacities(socketSpec, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(socketSpec);
         
         SocketPartition socketPartition_0 = Binder.partitionIndividualSocket(updatableCapacities, socketReq, socketSpec);
         assertSocketPartition(socketPartition_0, 0,

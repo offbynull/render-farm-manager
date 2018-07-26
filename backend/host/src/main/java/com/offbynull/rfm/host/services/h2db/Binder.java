@@ -371,7 +371,8 @@ final class Binder {
             IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
             CpuRequirement cpuReq,
             CpuSpecification cpuSpec) {
-        return partitionLeafNode(updatableCapacities,
+        return partitionLeafNode(
+                updatableCapacities,
                 cpuReq,
                 cpuSpec,
                 (id, cap) -> new CpuPartition(id, cap));
@@ -449,26 +450,26 @@ final class Binder {
             CapacityEnabledRequirement req) {
         BigDecimal availableCapacity = updatableCapacities.get(spec);
         BigDecimal consumeCapacity = calculateCapacityToConsume(availableCapacity, req.getCapacityRange());
-        
+
         if (consumeCapacity == null) {
             return null;
         }
-        
+
         BigDecimal newCapacity = availableCapacity.subtract(consumeCapacity);
         updatableCapacities.put(spec, newCapacity);
-        
+
         return consumeCapacity;
     }
-    
+
     private static BigDecimal calculateCapacityToConsume(BigDecimal specificationCapacity, NumberRange requirementRange) {
         if (specificationCapacity.compareTo(requirementRange.getEnd()) >= 0) { // if we can acquire the max, do so
             return requirementRange.getEnd();
         }
-        
+
         if (specificationCapacity.compareTo(requirementRange.getStart()) < 0) { // can we even acquire the min? if no, return null 
             return null;
         }
-        
+
         // eat all the available capacity
         return specificationCapacity;
     }

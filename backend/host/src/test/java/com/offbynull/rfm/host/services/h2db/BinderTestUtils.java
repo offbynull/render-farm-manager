@@ -6,7 +6,12 @@ import com.offbynull.rfm.host.model.partition.GpuPartition;
 import com.offbynull.rfm.host.model.partition.MountPartition;
 import com.offbynull.rfm.host.model.partition.RamPartition;
 import com.offbynull.rfm.host.model.partition.SocketPartition;
+import com.offbynull.rfm.host.model.specification.CapacityEnabledSpecification;
+import com.offbynull.rfm.host.model.specification.Specification;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import static org.junit.Assert.assertEquals;
@@ -76,5 +81,34 @@ final class BinderTestUtils {
         assertEquals(
                 Map.of("n_ram_id", BigDecimal.valueOf(id)),
                 ramPartition.getSpecificationId());
+    }
+    
+    public static IdentityHashMap<CapacityEnabledSpecification, BigDecimal> createCapacityMap(Specification... rootSpecs) throws Exception {
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> ret = new IdentityHashMap<>();
+        for (Specification spec : rootSpecs) {
+            addCapacities(spec, ret);
+        }
+        return ret;
+    }
+    
+    public static void addCapacities(Specification rootSpec, IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities) throws Exception {
+        if (rootSpec instanceof CapacityEnabledSpecification) {
+            CapacityEnabledSpecification capacitySpec = (CapacityEnabledSpecification) rootSpec;
+            BigDecimal capacity = capacitySpec.getCapacity();
+            updatableCapacities.put(capacitySpec, capacity);
+        }
+        
+        for (Method method : rootSpec.getClass().getMethods()) {
+            if (!method.getName().endsWith("Specifications")) {
+                continue;
+            }
+            
+            method.setAccessible(true);
+            List<Specification> childSpecs = (List<Specification>) method.invoke(rootSpec);
+            
+            for (Specification childSpec : childSpecs) {
+                addCapacities(childSpec, updatableCapacities);
+            }
+        }
     }
 }

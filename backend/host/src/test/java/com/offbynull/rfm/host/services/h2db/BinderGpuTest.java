@@ -6,8 +6,8 @@ import com.offbynull.rfm.host.model.specification.CapacityEnabledSpecification;
 import com.offbynull.rfm.host.model.specification.GpuSpecification;
 import com.offbynull.rfm.host.parser.Parser;
 import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.assertGpuPartition;
+import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.createCapacityMap;
 import static com.offbynull.rfm.host.testutils.TestUtils.loadSpec;
-import static com.offbynull.rfm.host.testutils.TestUtils.pullCapacities;
 import java.math.BigDecimal;
 import static java.math.BigDecimal.ZERO;
 import static java.util.Collections.EMPTY_LIST;
@@ -25,8 +25,7 @@ public class BinderGpuTest {
         GpuRequirement gpuReq = (GpuRequirement) parser.parseReq(EMPTY_MAP, "1 gpu with 1 capacity");
         GpuSpecification gpuSpec = (GpuSpecification) loadSpec("gpu:1{ s_gpu_id:pci_0000 }");
         
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        pullCapacities(gpuSpec, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(gpuSpec);
         
         GpuPartition gpuPartition = Binder.partitionGpu(updatableCapacities, gpuReq, gpuSpec);
         
@@ -38,8 +37,7 @@ public class BinderGpuTest {
         GpuRequirement gpuReq = (GpuRequirement) parser.parseReq(EMPTY_MAP, "1 gpu with 1 capacity");
         GpuSpecification gpuSpec = (GpuSpecification) loadSpec("gpu:1{ s_gpu_id:pci_0000 }");
         
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        pullCapacities(gpuSpec, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(gpuSpec);
         updatableCapacities.put(gpuSpec, ZERO);
         
         GpuPartition gpuPartition = Binder.partitionGpu(updatableCapacities, gpuReq, gpuSpec);

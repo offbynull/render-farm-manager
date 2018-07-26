@@ -6,8 +6,8 @@ import com.offbynull.rfm.host.model.specification.CapacityEnabledSpecification;
 import com.offbynull.rfm.host.model.specification.MountSpecification;
 import com.offbynull.rfm.host.parser.Parser;
 import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.assertMountPartition;
+import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.createCapacityMap;
 import static com.offbynull.rfm.host.testutils.TestUtils.loadSpec;
-import static com.offbynull.rfm.host.testutils.TestUtils.pullCapacities;
 import java.math.BigDecimal;
 import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.EMPTY_MAP;
@@ -24,8 +24,7 @@ public class BinderMountTest {
         MountRequirement mountReq = (MountRequirement) parser.parseReq(EMPTY_MAP, "1 mount with [100,100000] capacity");
         MountSpecification mountSpec = (MountSpecification) loadSpec("mount:100000{ s_target:/test1 }");
         
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        pullCapacities(mountSpec, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(mountSpec);
         updatableCapacities.replace(mountSpec, BigDecimal.valueOf(90000));
         
         MountPartition mountPartition = Binder.partitionMount(updatableCapacities, mountReq, mountSpec);
@@ -38,8 +37,7 @@ public class BinderMountTest {
         MountRequirement mountReq = (MountRequirement) parser.parseReq(EMPTY_MAP, "1 mount with [100,100000] capacity");
         MountSpecification mountSpec = (MountSpecification) loadSpec("mount:70000{ s_target:/test1 }");
         
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        pullCapacities(mountSpec, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(mountSpec);
         
         MountPartition mountPartition = Binder.partitionMount(updatableCapacities, mountReq, mountSpec);
         
@@ -51,8 +49,7 @@ public class BinderMountTest {
         MountRequirement mountReq = (MountRequirement) parser.parseReq(EMPTY_MAP, "1 mount with 100000 capacity");
         MountSpecification mountSpec = (MountSpecification) loadSpec("mount:100000{ s_target:/test1 }");
         
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        pullCapacities(mountSpec, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(mountSpec);
         updatableCapacities.replace(mountSpec, BigDecimal.valueOf(99999));
         
         MountPartition mountPartition = Binder.partitionMount(updatableCapacities, mountReq, mountSpec);

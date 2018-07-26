@@ -7,8 +7,8 @@ import com.offbynull.rfm.host.model.specification.CoreSpecification;
 import com.offbynull.rfm.host.parser.Parser;
 import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.assertCorePartition;
 import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.assertCpuPartition;
+import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.createCapacityMap;
 import static com.offbynull.rfm.host.testutils.TestUtils.loadSpec;
-import static com.offbynull.rfm.host.testutils.TestUtils.pullCapacities;
 import java.math.BigDecimal;
 import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.EMPTY_MAP;
@@ -38,8 +38,7 @@ public class BinderCoreTest {
                 + "   n_core_id:0\n"
                 + "}"
         );
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        pullCapacities(coreSpec, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(coreSpec);
         
         CorePartition corePartition = Binder.partitionIndividualCore(updatableCapacities, coreReq, coreSpec);
         
@@ -79,9 +78,7 @@ public class BinderCoreTest {
                 + "   n_core_id:0\n"
                 + "}"
         );
-        
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        pullCapacities(coreSpec, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(coreSpec);
         
         CorePartition corePartition = Binder.partitionIndividualCore(updatableCapacities, coreReq, coreSpec);
         
@@ -116,10 +113,7 @@ public class BinderCoreTest {
                 + "   n_core_id:1\n"
                 + "}\n"
         );
-        
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        pullCapacities(coreSpec1, updatableCapacities);
-        pullCapacities(coreSpec2, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(coreSpec1, coreSpec2);
         
         List<CorePartition> corePartitions = Binder.partitionAcrossAllCores(updatableCapacities, coreReq, List.of(coreSpec1, coreSpec2));
 
@@ -170,10 +164,7 @@ public class BinderCoreTest {
                 + "   n_core_id:1\n"
                 + "}\n"
         );
-        
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        pullCapacities(coreSpec1, updatableCapacities);
-        pullCapacities(coreSpec2, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(coreSpec1, coreSpec2);
         
         List<CorePartition> corePartitions = Binder.partitionAcrossAllCores(updatableCapacities, coreReq, List.of(coreSpec1, coreSpec2));
         

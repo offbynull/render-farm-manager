@@ -6,8 +6,8 @@ import com.offbynull.rfm.host.model.specification.CapacityEnabledSpecification;
 import com.offbynull.rfm.host.model.specification.CpuSpecification;
 import com.offbynull.rfm.host.parser.Parser;
 import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.assertCpuPartition;
+import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.createCapacityMap;
 import static com.offbynull.rfm.host.testutils.TestUtils.loadSpec;
-import static com.offbynull.rfm.host.testutils.TestUtils.pullCapacities;
 import java.math.BigDecimal;
 import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.EMPTY_MAP;
@@ -24,8 +24,7 @@ public class BinderCpuTest {
         CpuRequirement cpuReq = (CpuRequirement) parser.parseReq(EMPTY_MAP, "1 cpu with [100,100000] capacity");
         CpuSpecification cpuSpec = (CpuSpecification) loadSpec("cpu:100000{ n_cpu_id:0 }");
         
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        pullCapacities(cpuSpec, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(cpuSpec);
         updatableCapacities.put(cpuSpec, BigDecimal.valueOf(90000));
         
         CpuPartition cpuPartition = Binder.partitionCpu(updatableCapacities, cpuReq, cpuSpec);
@@ -38,8 +37,7 @@ public class BinderCpuTest {
         CpuRequirement cpuReq = (CpuRequirement) parser.parseReq(EMPTY_MAP, "1 cpu with [100,100000] capacity");
         CpuSpecification cpuSpec = (CpuSpecification) loadSpec("cpu:70000{ n_cpu_id:0 }");
         
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        pullCapacities(cpuSpec, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(cpuSpec);
         
         CpuPartition cpuPartition = Binder.partitionCpu(updatableCapacities, cpuReq, cpuSpec);
         
@@ -51,8 +49,7 @@ public class BinderCpuTest {
         CpuRequirement cpuReq = (CpuRequirement) parser.parseReq(EMPTY_MAP, "1 cpu with 100000 capacity");
         CpuSpecification cpuSpec = (CpuSpecification) loadSpec("cpu:100000{ n_cpu_id:0 }");
         
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        pullCapacities(cpuSpec, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(cpuSpec);
         updatableCapacities.put(cpuSpec, BigDecimal.valueOf(99999));
         
         CpuPartition cpuPartition = Binder.partitionCpu(updatableCapacities, cpuReq, cpuSpec);

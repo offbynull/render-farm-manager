@@ -6,8 +6,8 @@ import com.offbynull.rfm.host.model.specification.CapacityEnabledSpecification;
 import com.offbynull.rfm.host.model.specification.RamSpecification;
 import com.offbynull.rfm.host.parser.Parser;
 import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.assertRamPartition;
+import static com.offbynull.rfm.host.services.h2db.BinderTestUtils.createCapacityMap;
 import static com.offbynull.rfm.host.testutils.TestUtils.loadSpec;
-import static com.offbynull.rfm.host.testutils.TestUtils.pullCapacities;
 import java.math.BigDecimal;
 import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.EMPTY_MAP;
@@ -24,8 +24,7 @@ public class BinderRamTest {
         RamRequirement ramReq = (RamRequirement) parser.parseReq(EMPTY_MAP, "1 ram with [100,100000] capacity");
         RamSpecification ramSpec = (RamSpecification) loadSpec("ram:100000{ n_ram_id:0 }");
         
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        pullCapacities(ramSpec, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(ramSpec);
         updatableCapacities.put(ramSpec, BigDecimal.valueOf(90000));
         
         RamPartition ramPartition = Binder.partitionRam(updatableCapacities, ramReq, ramSpec);
@@ -38,8 +37,7 @@ public class BinderRamTest {
         RamRequirement ramReq = (RamRequirement) parser.parseReq(EMPTY_MAP, "1 ram with [100,100000] capacity");
         RamSpecification ramSpec = (RamSpecification) loadSpec("ram:70000{ n_ram_id:0 }");
         
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        pullCapacities(ramSpec, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(ramSpec);
         
         RamPartition ramPartition = Binder.partitionRam(updatableCapacities, ramReq, ramSpec);
         
@@ -51,8 +49,7 @@ public class BinderRamTest {
         RamRequirement ramReq = (RamRequirement) parser.parseReq(EMPTY_MAP, "1 ram with 100000 capacity");
         RamSpecification ramSpec = (RamSpecification) loadSpec("ram:100000{ n_ram_id:0 }");
         
-        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = new IdentityHashMap<>();
-        pullCapacities(ramSpec, updatableCapacities);
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(ramSpec);
         updatableCapacities.put(ramSpec, BigDecimal.valueOf(99999));
         
         RamPartition ramPartition = Binder.partitionRam(updatableCapacities, ramReq, ramSpec);
