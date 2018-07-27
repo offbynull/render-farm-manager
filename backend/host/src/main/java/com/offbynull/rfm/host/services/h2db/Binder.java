@@ -31,17 +31,17 @@ import com.offbynull.rfm.host.service.Worker;
 import static com.offbynull.rfm.host.services.h2db.InternalUtils.getSpecificationKeyValues;
 import java.io.IOException;
 import java.math.BigDecimal;
+import static java.math.BigDecimal.ONE;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.Validate;
 
 final class Binder {
@@ -243,113 +243,113 @@ final class Binder {
             IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
             CoreRequirement coreReq,
             CoreSpecification coreSpec) {
-        Validate.validState(coreReq.getCount() != null);
-        
-        List<CpuPartition> corePartitions = new ArrayList<>();
-        
-        for (CpuRequirement cpuReq : coreReq.getCpuRequirements()) {
-            // we need operate on a copy of updatableCapacities because we may end up discarding the partitions we acquire
-            IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacitiesCopy = new IdentityHashMap<>(updatableCapacities);
-        
-            NumberRange cpuReqCount = cpuReq.getCount();
-            List<CpuPartition> coreCpuPartitions = new LinkedList<>();
-            while (true) {
-                int oldSize = coreCpuPartitions.size();
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacitiesCopy = new IdentityHashMap<>(updatableCapacities);
 
-                for (CpuSpecification cpuSpec : coreSpec.getCpuSpecifications()) {
-                    // have we found the max cpus for the req? if so break
-                    int foundCount = coreCpuPartitions.size();
-                    if (!cpuReqCount.isBeforeEnd(foundCount)) {
+        Map<String, Object> coreSpecKey = getSpecificationKeyValues(coreSpec);
+        CorePartition corePartition = new CorePartition(coreSpecKey);
+
+        for (CpuRequirement cpuReq : coreReq.getCpuRequirements()) {
+            for (CpuSpecification cpuSpec : coreSpec.getCpuSpecifications()) {
+                while (true) {
+                    CpuPartition cpuPartition = partitionCpu(updatableCapacitiesCopy, cpuReq, cpuSpec);
+                    if (cpuPartition == null) {
                         break;
                     }
-                    // partition this cpu and add that partition to the found list
-                    CpuPartition foundCpuPartition = partitionCpu(updatableCapacitiesCopy, cpuReq, cpuSpec);
-                    if (foundCpuPartition != null) {
-                        coreCpuPartitions.add(foundCpuPartition);
-                    }
-                }
-                
-                // if nothing was added in this pass, break out of loop
-                int newSize = coreCpuPartitions.size();
-                if (oldSize == newSize) {
-                    break;
+                    corePartition = corePartition.addCpuPartitions(cpuPartition);
                 }
             }
-            
-            // if we don't have atleast the min cpus for the req, skip
-            int foundCount = coreCpuPartitions.size();
-            if (cpuReqCount.isBeforeStart(foundCount)) {
-                continue;
-            }
-            
-            // otherwise, apply
-            updatableCapacities.putAll(updatableCapacitiesCopy);
-            corePartitions.addAll(coreCpuPartitions);
         }
 
+        if (corePartition.getCpuPartitions().isEmpty()) {
+            return null;
+        }
 
-        Map<String, Object> specificationId = getSpecificationKeyValues(coreSpec);
-        CpuPartition[] cpuPartitions = corePartitions.stream().toArray(i -> new CpuPartition[i]);
-        return new CorePartition(specificationId, cpuPartitions);
+        updatableCapacities.putAll(updatableCapacitiesCopy);
+        return corePartition;
     }
     
     static List<CorePartition> partitionAcrossAllCores(
             IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
             CoreRequirement coreReq,
             List<CoreSpecification> coreSpecs) {
-        Validate.validState(coreReq.getCount() == null);
-        
-        // we need to copy updatableCapacities becuase it may get modified even if a match isn't found... if a match is found the copy will
-        // get put back into the original
         IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacitiesCopy = new IdentityHashMap<>(updatableCapacities);
-        MultiValuedMap<CoreSpecification, CpuPartition> corePartitions = new ArrayListValuedHashMap<>();
-        
+
+        Map<CoreSpecification, CorePartition> ret = new HashMap<>();
         for (CpuRequirement cpuReq : coreReq.getCpuRequirements()) {
-            NumberRange cpuReqCount = cpuReq.getCount();
-            while (true) {
-                int oldSize = corePartitions.size();
+            for (CoreSpecification coreSpec : coreSpecs) {
+                List<CpuPartition> cpuPartitions = new LinkedList<>();
                 
-                for (CoreSpecification coreSpec : coreSpecs) {
-                    List<CpuPartition> coreCpuPartitions = new LinkedList<>();
-                    for (CpuSpecification cpuSpec : coreSpec.getCpuSpecifications()) {
-                        // have we found the max cpus for the req? if so break
-                        int foundCount = coreCpuPartitions.size();
-                        if (!cpuReqCount.isBeforeEnd(foundCount)) {
+                // grab as many cpus as possible from all cores (up until the max)
+                CpuRequirement noMinCpuReq = reviseRequirementCountRangeToHaveNoMinimum(cpuReq);
+                top:
+                for (CpuSpecification cpuSpec : coreSpec.getCpuSpecifications()) {
+                    while (true) {
+                        CpuPartition cpuPartition = partitionCpu(updatableCapacitiesCopy, noMinCpuReq, cpuSpec);
+                        if (cpuPartition == null) { // can't partition this cpu anymore? skip to next cpu
                             break;
                         }
-                        // partition this cpu and add that partition to the found list
-                        CpuPartition foundCpuPartition = partitionCpu(updatableCapacitiesCopy, cpuReq, cpuSpec);
-                        if (foundCpuPartition != null) {
-                            coreCpuPartitions.add(foundCpuPartition);
+                        cpuPartitions.add(cpuPartition);
+                        
+                        noMinCpuReq = reduceRequirementCountRange(noMinCpuReq, cpuPartitions.size());
+                        if (noMinCpuReq == null) { // reached the max count for this cpu req? break out
+                            break top;
                         }
                     }
-                    
-                    // if we don't have atleast the min cpus for the req, skip
-                    int foundCount = coreCpuPartitions.size();
-                    if (cpuReqCount.isBeforeStart(foundCount)) {
-                        continue;
-                    }
-                    corePartitions.putAll(coreSpec, coreCpuPartitions);
                 }
                 
-                // if nothing was added in this pass, break out of loop
-                int newSize = corePartitions.size();
-                if (oldSize == newSize) {
+                // if the number of cpus grabbed above doesn't meet the cpu requirement's count range, bail out of method
+                //   we need to have a bind for all cpu reqs in the core req for this to be a successful bind, that's why we bail out
+                int cpuCount = cpuPartitions.size();
+                if (!cpuReq.getCount().isInRange(cpuCount)) {
+                    return null;
+                }
+                
+                // otherwise, add in the cpu partitions for that core spec
+                CorePartition corePartition = ret.get(coreSpec);
+                if (corePartition == null) {
+                    corePartition = new CorePartition(coreSpec, cpuPartitions.stream().toArray(i -> new CpuPartition[i]));
+                } else {
+                    corePartition = corePartition.addCpuPartitions(cpuPartitions);
+                }
+                ret.put(coreSpec, corePartition);
+                
+                // reached the max count for this cpu req? break out so we don't scan over the other cores
+                if (noMinCpuReq == null) {
                     break;
                 }
             }
         }
-
         updatableCapacities.putAll(updatableCapacitiesCopy);
-        List<CorePartition> ret = new LinkedList<>();
-        for (CoreSpecification key : corePartitions.keySet()) {
-            CpuPartition[] cpuPartitions = corePartitions.get(key).stream().toArray(i -> new CpuPartition[i]);
-            Map<String, Object> specificationId = getSpecificationKeyValues(key);
-            
-            CorePartition corePartition = new CorePartition(specificationId, cpuPartitions);
-            ret.add(corePartition);
+        return new ArrayList<>(ret.values());
+    }
+    
+    private static CpuRequirement reviseRequirementCountRangeToHaveNoMinimum(CpuRequirement cpuReq) {
+        NumberRange countRange = cpuReq.getCount();
+        countRange = new NumberRange(ONE, countRange.getEnd());
+        return new CpuRequirement(countRange, cpuReq.getWhereCondition(), cpuReq.getCapacityRange());
+    }
+    
+    private static CpuRequirement reduceRequirementCountRange(CpuRequirement cpuReq, int count) {
+        NumberRange countRange = cpuReq.getCount();
+        countRange = reduceRange(countRange, count);
+        if (countRange == null) {
+            return null;
         }
-        return ret;
+        return new CpuRequirement(countRange, cpuReq.getWhereCondition(), cpuReq.getCapacityRange());
+    }
+    
+    private static NumberRange reduceRange(NumberRange numberRange, int count) {
+        BigDecimal newStart = numberRange.getStart().subtract(BigDecimal.valueOf(count));
+        if (newStart.signum() <= 0) {
+            newStart = ONE;
+        }
+        
+        BigDecimal newEnd = numberRange.getEnd().subtract(BigDecimal.valueOf(count));
+        if (newEnd.signum() <= 0) {
+            return null;
+        }
+        
+        return new NumberRange(newStart, newEnd);
     }
     
     

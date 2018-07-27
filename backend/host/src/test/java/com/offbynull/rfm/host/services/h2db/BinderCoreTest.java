@@ -15,6 +15,7 @@ import static java.util.Collections.EMPTY_MAP;
 import java.util.IdentityHashMap;
 import java.util.List;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import org.junit.Test;
 
 public class BinderCoreTest {
@@ -44,8 +45,8 @@ public class BinderCoreTest {
         
         assertCorePartition(corePartition, 0,
                 cpuPartition -> assertCpuPartition(cpuPartition, 0, 50000),
-                cpuPartition -> assertCpuPartition(cpuPartition, 1, 50000),
                 cpuPartition -> assertCpuPartition(cpuPartition, 0, 50000),
+                cpuPartition -> assertCpuPartition(cpuPartition, 1, 50000),
                 cpuPartition -> assertCpuPartition(cpuPartition, 1, 50000)
         );
     }
@@ -91,6 +92,43 @@ public class BinderCoreTest {
     }
     
     @Test
+    public void mustFailToBindToIndividualCoreWhenCpuRequirementsNotMet() throws Exception {
+        // note that this core requirement has 2 cpu requirements... you want as many 75000 slices of as many cpus as possible, followed by
+        // 20000 slices of as many cpus as possible
+        //
+        // we have 1 core with 2 cpus,
+        //   the 1st requirement should grab...
+        //      75000 from cpu1
+        //      75000 from cpu2
+        //   the 2nd requirement should grab...
+        //      20000 from cpu1
+        //      20000 from cpu2
+        CoreRequirement coreReq = (CoreRequirement) parser.parseReq(
+                EMPTY_MAP,
+                ""
+                + "1 core {\n"
+                + "    [1,99999999] cpu with 75000 capacity\n"
+                + "    [1,99999999] cpu with 20000 capacity\n"
+                + "}"
+        );
+        CoreSpecification coreSpec = (CoreSpecification) loadSpec(
+                ""
+                + "core{\n"
+                + "   cpu:100000{ n_cpu_id:0 }\n"
+                + "   cpu:100000{ n_cpu_id:1 }\n"
+                + "   n_core_id:0\n"
+                + "}"
+        );
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(coreSpec);
+        updatableCapacities.put(coreSpec.getCpuSpecifications().get(0), BigDecimal.valueOf(10000));
+        updatableCapacities.put(coreSpec.getCpuSpecifications().get(1), BigDecimal.valueOf(10000));
+        
+        CorePartition corePartition = Binder.partitionIndividualCore(updatableCapacities, coreReq, coreSpec);
+        
+        assertNull(corePartition);
+    }
+    
+    @Test
     public void mustBindAcrossAllCoresWithSingleCpuRequirement() throws Exception {
         CoreRequirement coreReq = (CoreRequirement) parser.parseReq(
                 EMPTY_MAP,
@@ -131,7 +169,7 @@ public class BinderCoreTest {
     }
     
     @Test
-    public void mustBindAcrossAllCoresWithMultipleCpuRequirements() throws Exception {
+    public void mustBindAcrossAllCoresWithMultipleCpuRequirements1() throws Exception {
         // note that this core requirement has 2 cpu requirements... you want as many 75000 slices of as many cpus as possible, followed by
         // 20000 slices of as many cpus as possible
         //
@@ -169,10 +207,6 @@ public class BinderCoreTest {
         List<CorePartition> corePartitions = Binder.partitionAcrossAllCores(updatableCapacities, coreReq, List.of(coreSpec1, coreSpec2));
         
         assertEquals(2, corePartitions.size());
-        assertEquals(2, corePartitions.get(0).getCpuPartitions().size());
-        assertEquals(2, corePartitions.get(1).getCpuPartitions().size());
-        
-        
         
         CorePartition corePartition_0 = corePartitions.get(0);
         assertCorePartition(corePartition_0, 0,
@@ -185,5 +219,80 @@ public class BinderCoreTest {
                 cpuPartition -> assertCpuPartition(cpuPartition, 1, 75000),
                 cpuPartition -> assertCpuPartition(cpuPartition, 1, 20000)
         );
+    }
+    
+    @Test
+    public void mustBindAcrossAllCoresWithMultipleCpuRequirements2() throws Exception {
+        CoreRequirement coreReq = (CoreRequirement) parser.parseReq(
+                EMPTY_MAP,
+                ""
+                + "? core {\n"
+                + "    [1,99999999] cpu with 75000 capacity\n"
+                + "    1 cpu with 20000 capacity\n"
+                + "}"
+        );
+        CoreSpecification coreSpec1 = (CoreSpecification) loadSpec(
+                ""
+                + "core{\n"
+                + "   cpu:100000{ n_cpu_id:0 }\n"
+                + "   n_core_id:0\n"
+                + "}\n"
+        );
+        CoreSpecification coreSpec2 = (CoreSpecification) loadSpec(
+                ""
+                + "core{\n"
+                + "   cpu:100000{ n_cpu_id:1 }\n"
+                + "   n_core_id:1\n"
+                + "}\n"
+        );
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(coreSpec1, coreSpec2);
+        
+        List<CorePartition> corePartitions = Binder.partitionAcrossAllCores(updatableCapacities, coreReq, List.of(coreSpec1, coreSpec2));
+        
+        assertEquals(2, corePartitions.size());
+        
+        CorePartition corePartition_0 = corePartitions.get(0);
+        assertCorePartition(corePartition_0, 0,
+                cpuPartition -> assertCpuPartition(cpuPartition, 0, 75000),
+                cpuPartition -> assertCpuPartition(cpuPartition, 0, 20000)
+        );
+        
+        CorePartition corePartition_1 = corePartitions.get(1);
+        assertCorePartition(corePartition_1, 1,
+                cpuPartition -> assertCpuPartition(cpuPartition, 1, 75000)
+        );
+    }
+    
+    @Test
+    public void mustFailToBindAcrossAllCoresWhenCpuRequirementsNotMet() throws Exception {
+        CoreRequirement coreReq = (CoreRequirement) parser.parseReq(
+                EMPTY_MAP,
+                ""
+                + "? core {\n"
+                + "    [1,99999999] cpu with 75000 capacity\n"
+                + "    1 cpu with 20000 capacity\n"
+                + "}"
+        );
+        CoreSpecification coreSpec1 = (CoreSpecification) loadSpec(
+                ""
+                + "core{\n"
+                + "   cpu:100000{ n_cpu_id:0 }\n"
+                + "   n_core_id:0\n"
+                + "}\n"
+        );
+        CoreSpecification coreSpec2 = (CoreSpecification) loadSpec(
+                ""
+                + "core{\n"
+                + "   cpu:100000{ n_cpu_id:1 }\n"
+                + "   n_core_id:1\n"
+                + "}\n"
+        );
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(coreSpec1, coreSpec2);
+        updatableCapacities.put(coreSpec1.getCpuSpecifications().get(0), BigDecimal.valueOf(10000));
+        updatableCapacities.put(coreSpec2.getCpuSpecifications().get(0), BigDecimal.valueOf(10000));
+        
+        List<CorePartition> corePartitions = Binder.partitionAcrossAllCores(updatableCapacities, coreReq, List.of(coreSpec1, coreSpec2));
+        
+        assertNull(corePartitions);
     }
 }

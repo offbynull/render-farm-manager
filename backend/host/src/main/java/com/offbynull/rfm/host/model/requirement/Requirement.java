@@ -18,6 +18,7 @@ package com.offbynull.rfm.host.model.requirement;
 
 import com.offbynull.rfm.host.model.expression.Expression;
 import static com.offbynull.rfm.host.model.expression.DataType.BOOLEAN;
+import static java.math.BigDecimal.ONE;
 import org.apache.commons.lang3.Validate;
 
 /**
@@ -30,6 +31,10 @@ public abstract class Requirement {
 
     Requirement(NumberRange count, Expression whereCondition) {
         // count CAN be null. See comments in getCount()
+        if (count != null) {
+            Validate.isTrue(count.getStart().compareTo(ONE) >= 0);
+            // number range already validates that end >= start, so we don't need to check end
+        }
         Validate.notNull(whereCondition);
 
         Validate.isTrue(BOOLEAN == whereCondition.getType());
