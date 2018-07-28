@@ -168,61 +168,62 @@ final class Binder {
             IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities,
             SocketRequirement socketReq,
             SocketSpecification socketSpec) {
-        Validate.validState(socketReq.getCount() != null);
-        
-        List<CorePartition> socketPartitions = new ArrayList<>();
-        
-        for (CoreRequirement coreReq : socketReq.getCoreRequirements()) {
-            // we need operate on a copy of updatableCapacities because we may end up discarding the partitions we acquire
-            IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacitiesCopy = new IdentityHashMap<>(updatableCapacities);
-        
-            NumberRange coreReqCount = coreReq.getCount();
-            List<CorePartition> socketCorePartitions = new LinkedList<>();
-            
-            if (coreReqCount == null) {
-                List<CoreSpecification> coreSpecs = socketSpec.getCoreSpecifications();
-                List<CorePartition> foundCorePartitions = partitionAcrossAllCores(updatableCapacitiesCopy, coreReq, coreSpecs);
-                socketCorePartitions.addAll(foundCorePartitions);
-            } else {
-                while (true) {
-                    int oldSize = socketCorePartitions.size();
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacitiesCopy = new IdentityHashMap<>(updatableCapacities);
 
-                    for (CoreSpecification coreSpec : socketSpec.getCoreSpecifications()) {
-                        // have we found the max cores for the req? if so break
-                        int foundCount = socketCorePartitions.size();
-                        if (!coreReqCount.isBeforeEnd(foundCount)) {
+        Map<String, Object> socketSpecKey = getSpecificationKeyValues(socketSpec);
+        SocketPartition socketPartition = new SocketPartition(socketSpecKey);
+
+        for (CoreRequirement coreReq : socketReq.getCoreRequirements()) {
+            List<CoreSpecification> coreSpecs = socketSpec.getCoreSpecifications();
+            if (coreReq.getCount() == null) {
+                List<CorePartition> corePartitions = partitionAcrossAllCores(updatableCapacitiesCopy, coreReq, coreSpecs);
+                socketPartition.addCorePartitions(corePartitions);
+            } else {
+                top:
+                for (CoreSpecification coreSpec : coreSpecs) {
+                    while (true) {
+                        CorePartition corePartition = partitionIndividualCore(updatableCapacitiesCopy, coreReq, coreSpec);
+                        if (corePartition == null) {
                             break;
                         }
-                        // partition this core and add that partition to the found list
-                        CorePartition foundCorePartition = partitionIndividualCore(updatableCapacitiesCopy, coreReq, coreSpec);
-                        if (foundCorePartition != null) {
-                            socketCorePartitions.add(foundCorePartition);
+                        socketPartition = socketPartition.addCorePartitions(corePartition);
+
+                        coreReq = reduceRequirementCountRange(coreReq, 1);
+                        if (coreReq == null) {
+                            break top;
                         }
                     }
-
-                    // if nothing was added in this pass, break out of loop
-                    int newSize = socketCorePartitions.size();
-                    if (oldSize == newSize) {
-                        break;
-                    }
-                }
-
-                // if we don't have atleast the min cores for the req, skip
-                int foundCount = socketCorePartitions.size();
-                if (coreReqCount.isBeforeStart(foundCount)) {
-                    continue;
                 }
             }
-            
-            // otherwise, apply
-            updatableCapacities.putAll(updatableCapacitiesCopy);
-            socketPartitions.addAll(socketCorePartitions);
         }
 
+        if (socketPartition.getCorePartitions().isEmpty()) {
+            return null;
+        }
 
-        Map<String, Object> specificationId = getSpecificationKeyValues(socketSpec);
-        CorePartition[] corePartitions = socketPartitions.stream().toArray(i -> new CorePartition[i]);
-        return new SocketPartition(specificationId, corePartitions);
+        updatableCapacities.putAll(updatableCapacitiesCopy);
+        return socketPartition;
+    }
+    
+    private static CoreRequirement reviseRequirementCountRangeToHaveNoMinimum(CoreRequirement coreReq) {
+        NumberRange countRange = coreReq.getCount();
+        countRange = new NumberRange(ONE, countRange.getEnd());
+        return new CoreRequirement(
+                countRange,
+                coreReq.getWhereCondition(),
+                coreReq.getCpuRequirements().stream().toArray(i -> new CpuRequirement[i]));
+    }
+    
+    private static CoreRequirement reduceRequirementCountRange(CoreRequirement coreReq, int count) {
+        NumberRange countRange = coreReq.getCount();
+        countRange = reduceRange(countRange, count);
+        if (countRange == null) {
+            return null;
+        }
+        return new CoreRequirement(
+                countRange,
+                coreReq.getWhereCondition(),
+                coreReq.getCpuRequirements().stream().toArray(i -> new CpuRequirement[i]));
     }
     
     
@@ -249,6 +250,7 @@ final class Binder {
         CorePartition corePartition = new CorePartition(coreSpecKey);
 
         for (CpuRequirement cpuReq : coreReq.getCpuRequirements()) {
+            top:
             for (CpuSpecification cpuSpec : coreSpec.getCpuSpecifications()) {
                 while (true) {
                     CpuPartition cpuPartition = partitionCpu(updatableCapacitiesCopy, cpuReq, cpuSpec);
@@ -256,6 +258,11 @@ final class Binder {
                         break;
                     }
                     corePartition = corePartition.addCpuPartitions(cpuPartition);
+                    
+                    cpuReq = reduceRequirementCountRange(cpuReq, 1);
+                    if (cpuReq == null) {
+                        break top;
+                    }
                 }
             }
         }
