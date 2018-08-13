@@ -173,13 +173,13 @@ final class Binder {
         Map<String, Object> socketSpecKey = getSpecificationKeyValues(socketSpec);
         SocketPartition socketPartition = new SocketPartition(socketSpecKey);
 
+        top:
         for (CoreRequirement coreReq : socketReq.getCoreRequirements()) {
             List<CoreSpecification> coreSpecs = socketSpec.getCoreSpecifications();
             if (coreReq.getCount() == null) {
                 List<CorePartition> corePartitions = partitionAcrossAllCores(updatableCapacitiesCopy, coreReq, coreSpecs);
                 socketPartition.addCorePartitions(corePartitions);
             } else {
-                top:
                 for (CoreSpecification coreSpec : coreSpecs) {
                     while (true) {
                         CorePartition corePartition = partitionIndividualCore(updatableCapacitiesCopy, coreReq, coreSpec);
@@ -190,7 +190,7 @@ final class Binder {
 
                         coreReq = reduceRequirementCountRange(coreReq, 1);
                         if (coreReq == null) {
-                            break top;
+                            continue top;
                         }
                     }
                 }
@@ -249,19 +249,19 @@ final class Binder {
         Map<String, Object> coreSpecKey = getSpecificationKeyValues(coreSpec);
         CorePartition corePartition = new CorePartition(coreSpecKey);
 
+        top:
         for (CpuRequirement cpuReq : coreReq.getCpuRequirements()) {
-            top:
             for (CpuSpecification cpuSpec : coreSpec.getCpuSpecifications()) {
                 while (true) {
                     CpuPartition cpuPartition = partitionCpu(updatableCapacitiesCopy, cpuReq, cpuSpec);
-                    if (cpuPartition == null) {
+                    if (cpuPartition == null) { // can't partition this cpu anymore? skip to next cpu in core
                         break;
                     }
                     corePartition = corePartition.addCpuPartitions(cpuPartition);
                     
                     cpuReq = reduceRequirementCountRange(cpuReq, 1);
-                    if (cpuReq == null) {
-                        break top;
+                    if (cpuReq == null) { // reached the max count for this cpu req? skip to next requirement
+                        continue top;
                     }
                 }
             }
@@ -292,13 +292,13 @@ final class Binder {
                 for (CpuSpecification cpuSpec : coreSpec.getCpuSpecifications()) {
                     while (true) {
                         CpuPartition cpuPartition = partitionCpu(updatableCapacitiesCopy, noMinCpuReq, cpuSpec);
-                        if (cpuPartition == null) { // can't partition this cpu anymore? skip to next cpu
+                        if (cpuPartition == null) { // can't partition this cpu anymore? skip to next cpu in core
                             break;
                         }
                         cpuPartitions.add(cpuPartition);
                         
                         noMinCpuReq = reduceRequirementCountRange(noMinCpuReq, cpuPartitions.size());
-                        if (noMinCpuReq == null) { // reached the max count for this cpu req? break out
+                        if (noMinCpuReq == null) { // reached the max count for this cpu req? skip to next requirement
                             break top;
                         }
                     }
