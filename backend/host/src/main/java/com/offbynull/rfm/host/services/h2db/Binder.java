@@ -178,7 +178,10 @@ final class Binder {
             List<CoreSpecification> coreSpecs = socketSpec.getCoreSpecifications();
             if (coreReq.getCount() == null) {
                 List<CorePartition> corePartitions = partitionAcrossAllCores(updatableCapacitiesCopy, coreReq, coreSpecs);
-                socketPartition.addCorePartitions(corePartitions);
+                if (corePartitions == null) {
+                    break;
+                }
+                socketPartition = socketPartition.addCorePartitions(corePartitions);
             } else {
                 for (CoreSpecification coreSpec : coreSpecs) {
                     while (true) {
@@ -283,11 +286,12 @@ final class Binder {
 
         Map<CoreSpecification, CorePartition> ret = new HashMap<>();
         for (CpuRequirement cpuReq : coreReq.getCpuRequirements()) {
+            CpuRequirement noMinCpuReq = reviseRequirementCountRangeToHaveNoMinimum(cpuReq);
+            long cpuCount = 0L;
+            
             for (CoreSpecification coreSpec : coreSpecs) {
                 List<CpuPartition> cpuPartitions = new LinkedList<>();
-                
-                // grab as many cpus as possible from all cores (up until the max)
-                CpuRequirement noMinCpuReq = reviseRequirementCountRangeToHaveNoMinimum(cpuReq);
+
                 top:
                 for (CpuSpecification cpuSpec : coreSpec.getCpuSpecifications()) {
                     while (true) {
@@ -297,21 +301,16 @@ final class Binder {
                         }
                         cpuPartitions.add(cpuPartition);
                         
-                        noMinCpuReq = reduceRequirementCountRange(noMinCpuReq, cpuPartitions.size());
+                        noMinCpuReq = reduceRequirementCountRange(noMinCpuReq, 1);
                         if (noMinCpuReq == null) { // reached the max count for this cpu req? skip to next requirement
                             break top;
                         }
                     }
                 }
                 
-                // if the number of cpus grabbed above doesn't meet the cpu requirement's count range, bail out of method
-                //   we need to have a bind for all cpu reqs in the core req for this to be a successful bind, that's why we bail out
-                int cpuCount = cpuPartitions.size();
-                if (!cpuReq.getCount().isInRange(cpuCount)) {
-                    return null;
-                }
+                cpuCount += cpuPartitions.size();
                 
-                // otherwise, add in the cpu partitions for that core spec
+                // add in the cpu partitions for that core spec
                 CorePartition corePartition = ret.get(coreSpec);
                 if (corePartition == null) {
                     corePartition = new CorePartition(coreSpec, cpuPartitions.stream().toArray(i -> new CpuPartition[i]));
@@ -324,6 +323,12 @@ final class Binder {
                 if (noMinCpuReq == null) {
                     break;
                 }
+            }
+            
+            // if the number of cpus grabbed for this req doesn't meet the req's count range, bail out of method
+            //   we need to have a bind for all cpu reqs in the core req for this to be a successful bind, that's why we bail out
+            if (!cpuReq.getCount().isInRange(cpuCount)) {
+                return null;
             }
         }
         updatableCapacities.putAll(updatableCapacitiesCopy);

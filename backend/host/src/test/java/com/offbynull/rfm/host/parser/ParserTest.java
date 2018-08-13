@@ -87,6 +87,7 @@ public class ParserTest {
                        // Also, remember that CPU hierarchy isn't nessecarily needed. For example, if you have the core requirement directly
                        // under host (instead of under socket), the system won't nessecarily give you cores from the same socket.
                 + "    [3,40] socket where socket.s_vendor==\"intel\" && socket.s_family==\"xeon\" {\n"
+                + "        1 ram with 20gb where ......"
                 + "        [1,9999] core where core.n_siblings>=2 {\n"
                 + "            2 cpus with 100000 capacity\n"
                 + "        }\n"

@@ -118,8 +118,8 @@ public class BinderSocketTest {
     }
     
     @Test
-    public void mustBindToIndividualSocketWithUnboundedCoreRequirement() {
-        // have 1 bounded core and 1 unbounded core
+    public void mustBindToIndividualSocketWithUnboundedCoreRequirement() throws Exception {
+
     }
     
     @Test
@@ -128,12 +128,114 @@ public class BinderSocketTest {
     }
     
     @Test
-    public void mustBindAcrossAllCoresWithSingleCpuRequirement() {
+    public void mustBindAcrossAllCoresWithSingleCpuRequirement() throws Exception {
+        SocketRequirement socketReq = (SocketRequirement) parser.parseReq(
+                EMPTY_MAP,
+                ""
+                + "1 socket {"
+                + "    ? core {"
+                + "        7 cpu with 50000 capacity"
+                + "    }"
+                + "}"
+        );
+        SocketSpecification socketSpec = (SocketSpecification) TestUtils.loadSpec(
+                ""
+                + "socket{\n"
+                + "  core{\n"
+                + "     cpu:100000{ n_cpu_id:0 }\n"
+                + "     cpu:100000{ n_cpu_id:1 }\n"
+                + "     n_core_id:0\n"
+                + "  }\n"
+                + "  core{\n"
+                + "    cpu:100000{ n_cpu_id:0 }\n"
+                + "    cpu:100000{ n_cpu_id:1 }\n"
+                + "    n_core_id:1\n"
+                + "  }\n"
+                + "  n_socket_id:0\n"
+                + "}"
+        );
+
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(socketSpec);
+        
+        SocketPartition socketPartition_0 = Binder.partitionIndividualSocket(updatableCapacities, socketReq, socketSpec);
+        assertSocketPartition(socketPartition_0, 0,
+                corePartition -> assertCorePartition(corePartition, 0,
+                        cpuPartition -> assertCpuPartition(cpuPartition, 0, 50000),
+                        cpuPartition -> assertCpuPartition(cpuPartition, 0, 50000),
+                        cpuPartition -> assertCpuPartition(cpuPartition, 1, 50000),
+                        cpuPartition -> assertCpuPartition(cpuPartition, 1, 50000)
+                ),
+                corePartition -> assertCorePartition(corePartition, 1,
+                        cpuPartition -> assertCpuPartition(cpuPartition, 0, 50000),
+                        cpuPartition -> assertCpuPartition(cpuPartition, 0, 50000),
+                        cpuPartition -> assertCpuPartition(cpuPartition, 1, 50000)
+                )
+        );
+    }
+    
+    @Test
+    public void mustBindAcrossAllCoresWithMultipleCpuRequirements() throws Exception {
+        SocketRequirement socketReq = (SocketRequirement) parser.parseReq(
+                EMPTY_MAP,
+                ""
+                + "1 socket {"
+                + "    ? core {"
+                + "        1 cpu with 20000 capacity"
+                + "    }"
+                + "    ? core {"
+                + "        7 cpu with 50000 capacity"
+                + "        [1,99999] cpu with 10000 capacity"
+                + "    }"
+                + "}"
+        );
+        SocketSpecification socketSpec = (SocketSpecification) TestUtils.loadSpec(
+                ""
+                + "socket{\n"
+                + "  core{\n"
+                + "     cpu:100000{ n_cpu_id:0 }\n"
+                + "     cpu:100000{ n_cpu_id:1 }\n"
+                + "     n_core_id:0\n"
+                + "  }\n"
+                + "  core{\n"
+                + "    cpu:100000{ n_cpu_id:0 }\n"
+                + "    cpu:100000{ n_cpu_id:1 }\n"
+                + "    n_core_id:1\n"
+                + "  }\n"
+                + "  n_socket_id:0\n"
+                + "}"
+        );
+
+        IdentityHashMap<CapacityEnabledSpecification, BigDecimal> updatableCapacities = createCapacityMap(socketSpec);
+        
+        SocketPartition socketPartition_0 = Binder.partitionIndividualSocket(updatableCapacities, socketReq, socketSpec);
+        assertSocketPartition(socketPartition_0, 0,
+                corePartition -> assertCorePartition(corePartition, 0,
+                        cpuPartition -> assertCpuPartition(cpuPartition, 0, 20000)
+                ),
+                corePartition -> assertCorePartition(corePartition, 0,
+                        cpuPartition -> assertCpuPartition(cpuPartition, 0, 50000),
+                        cpuPartition -> assertCpuPartition(cpuPartition, 1, 50000),
+                        cpuPartition -> assertCpuPartition(cpuPartition, 1, 50000),
+                        cpuPartition -> assertCpuPartition(cpuPartition, 0, 10000),
+                        cpuPartition -> assertCpuPartition(cpuPartition, 0, 10000),
+                        cpuPartition -> assertCpuPartition(cpuPartition, 0, 10000)
+                ),
+                corePartition -> assertCorePartition(corePartition, 1,
+                        cpuPartition -> assertCpuPartition(cpuPartition, 0, 50000),
+                        cpuPartition -> assertCpuPartition(cpuPartition, 0, 50000),
+                        cpuPartition -> assertCpuPartition(cpuPartition, 1, 50000),
+                        cpuPartition -> assertCpuPartition(cpuPartition, 1, 50000)
+                )
+        );
+    }
+    
+    @Test
+    public void mustFailToBindToIndividualSocketWhenCoreRequirementsNotMet() throws Exception {
 
     }
     
     @Test
-    public void mustBindAcrossAllCoresWithMultipleCpuRequirements() {
+    public void mustFailToBindAcrossAllSocketsWhenCoreRequirementsNotMet() throws Exception {
 
     }
 }
